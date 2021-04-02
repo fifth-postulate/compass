@@ -1,5 +1,6 @@
 module Maze exposing (Configuration, Error, Maze, Msg, fromDescription, update, view)
 
+import Dict exposing (Dict)
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute
 
@@ -8,6 +9,7 @@ type alias Configuration =
     { size : Int
     , barrierColor : String
     , gridColor : String
+    , cellColor : String
     }
 
 
@@ -19,12 +21,52 @@ type Maze
     = Maze
         { rows : Int
         , columns : Int
+        , data : Dict Int (Dict Int Content)
         }
 
 
+type Content
+    = Barrier
+    | Empty
+
+
 fromDescription : String -> Result Error Maze
-fromDescription _ =
-    Ok <| Maze { rows = 5, columns = 8 }
+fromDescription input =
+    let
+        inputRows =
+            String.split "\n" input
+
+        toContent cell =
+            case cell of
+                "." ->
+                    Empty
+
+                _ ->
+                    Barrier
+
+        toData : Int -> String -> Dict Int Content
+        toData x row =
+            row
+                |> String.split ""
+                |> List.indexedMap (\y column -> ( y, toContent column ))
+                |> Dict.fromList
+
+        data : Dict Int (Dict Int Content)
+        data =
+            input
+                |> String.split "\n"
+                |> List.indexedMap (\x row -> ( x, toData x row ))
+                |> Dict.fromList
+
+        columns =
+            inputRows
+                |> List.map String.length
+                |> List.foldl max 0
+
+        rows =
+            List.length inputRows
+    in
+    Ok <| Maze { rows = rows, columns = columns, data = data }
 
 
 type Error
@@ -36,20 +78,67 @@ type Msg
 
 
 update : Msg -> Maze -> ( Maze, Cmd Msg )
-update _ maze =
-    ( maze, Cmd.none )
+update _ aMaze =
+    ( aMaze, Cmd.none )
 
 
-view : Configuration -> Maze -> Svg Msg
-view configuration (Maze { rows, columns }) =
+view : Configuration -> Maze -> Svg msg
+view configuration ((Maze { rows, columns, data }) as aMaze) =
     let
         dividers =
-            2 + max rows columns
+            max rows columns
+
+        dividedConfiguration =
+            divided dividers configuration
     in
     Svg.svg [ Attribute.width <| String.fromInt configuration.size, Attribute.height <| String.fromInt configuration.size ]
         [ background configuration
-        , grid <| divided dividers configuration
+        , maze dividedConfiguration aMaze
+        , grid dividedConfiguration
         ]
+
+
+maze : Divided Configuration -> Maze -> Svg msg
+maze configuration (Maze { rows, columns, data }) =
+    let
+        dr = (configuration.dividers - rows) // 2
+
+        dc = (configuration.dividers - columns) // 2
+
+        toData x d =
+            d
+                |> Dict.toList
+                |> List.map (\( y, content ) -> ( x + dr, y + dc, content ))
+    in
+    data
+        |> Dict.toList
+        |> List.concatMap (\( x, d ) -> toData x d)
+        |> List.map (toCell configuration)
+        |> Svg.g []
+
+
+toCell : Divided Configuration -> ( Int, Int, Content ) -> Svg msg
+toCell configuration ( row, column, content ) =
+    let
+        gridSize =
+            toFloat configuration.size / toFloat configuration.dividers
+
+        color =
+            case content of
+                Barrier ->
+                    configuration.barrierColor
+
+                Empty ->
+                    configuration.cellColor
+    in
+    Svg.rect
+        [ Attribute.x <| String.fromFloat <| (*) gridSize <| toFloat <| column
+        , Attribute.y <| String.fromFloat <| (*) gridSize <| toFloat <| row
+        , Attribute.width <| String.fromFloat gridSize
+        , Attribute.height <| String.fromFloat gridSize
+        , Attribute.fill color
+        ]
+        []
 
 
 divided : Int -> Configuration -> Divided Configuration
@@ -57,6 +146,7 @@ divided dividers configuration =
     { size = configuration.size
     , barrierColor = configuration.barrierColor
     , gridColor = configuration.gridColor
+    , cellColor = configuration.cellColor
     , dividers = dividers
     }
 
@@ -66,7 +156,7 @@ background configuration =
     Svg.rect
         [ Attribute.width <| String.fromInt configuration.size
         , Attribute.height <| String.fromInt configuration.size
-        , Attribute.color configuration.barrierColor
+        , Attribute.fill configuration.barrierColor
         ]
         []
 

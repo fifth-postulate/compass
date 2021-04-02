@@ -11,7 +11,7 @@ main =
     Browser.element
         { init = init
         , update = update
-        , view = view { size = 640, barrierColor = "black", gridColor = "seashell" }
+        , view = view { size = 640, barrierColor = "black", gridColor = "seashell", cellColor = "white" }
         , subscriptions = subscriptions
         }
 
@@ -29,11 +29,24 @@ type Error
     = MazeError Maze.Error
 
 
+maze : String
+maze =
+    [ "#############"
+    , "#.#...#..#..#"
+    , "#.#.#.#.....#"
+    , "#...#...###.#"
+    , "#.#.#..####.#"
+    , "#############"
+    ]
+        |> String.join "\n"
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            Maze.fromDescription ""
+            maze
+                |> Maze.fromDescription
                 |> Result.mapError MazeError
     in
     ( model, Cmd.none )
