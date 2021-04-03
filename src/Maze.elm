@@ -1,4 +1,4 @@
-module Maze exposing (Configuration, Error, Maze, Msg, fromDescription, update, view)
+module Maze exposing (Configuration, Error(..), Maze, Msg, fromDescription, update, view)
 
 import Dict exposing (Dict)
 import Svg exposing (Svg)
@@ -21,11 +21,11 @@ type Maze
     = Maze
         { rows : Int
         , columns : Int
-        , data : Dict Int (Dict Int Content)
+        , data : Dict Int (Dict Int Cell)
         }
 
 
-type Content
+type Cell
     = Barrier
     | Empty
 
@@ -33,10 +33,24 @@ type Content
 fromDescription : String -> Result Error Maze
 fromDescription input =
     let
-        inputRows =
-            String.split "\n" input
+        checkedInput : Result Error (List (List Cell))
+        checkedInput =
+            Ok input
+                |> containsOnly [ '#', '.', '\n' ]
+                |> Result.map String.lines
+                |> enoughRows
+                |> Result.map (List.map toColumns)
+                |> columnsAgree
+                |> enoughColumns
 
-        toContent cell =
+        toColumns : String -> List Cell
+        toColumns aRow =
+            aRow
+                |> String.split ""
+                |> List.map toCell
+
+        toCell : String -> Cell
+        toCell cell =
             case cell of
                 "." ->
                     Empty
@@ -44,33 +58,110 @@ fromDescription input =
                 _ ->
                     Barrier
 
-        toData : Int -> String -> Dict Int Content
-        toData x row =
-            row
-                |> String.split ""
-                |> List.indexedMap (\y column -> ( y, toContent column ))
-                |> Dict.fromList
+        rows : List (List Cell) -> Int
+        rows raw =
+            raw
+                |> List.length
 
-        data : Dict Int (Dict Int Content)
-        data =
-            input
-                |> String.split "\n"
-                |> List.indexedMap (\x row -> ( x, toData x row ))
-                |> Dict.fromList
-
-        columns =
-            inputRows
-                |> List.map String.length
+        columns : List (List Cell) -> Int
+        columns raw =
+            raw
+                |> List.map List.length
                 |> List.foldl max 0
 
-        rows =
-            List.length inputRows
+        data : List (List Cell) -> Dict Int (Dict Int Cell)
+        data raw =
+            raw
+                |> List.indexedMap (\y row -> ( y, toData row ))
+                |> Dict.fromList
+
+        toData : List Cell -> Dict Int Cell
+        toData row =
+            row
+                |> List.indexedMap (\x cell -> ( x, cell ))
+                |> Dict.fromList
     in
-    Ok <| Maze { rows = rows, columns = columns, data = data }
+    checkedInput
+        |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, data = data raw })
+
+
+type alias Specification e a =
+    Result e a -> Result e a
+
+
+toSpecification : e -> (a -> Bool) -> Specification e a
+toSpecification error predicate source =
+    let
+        fromPredicate a =
+            if predicate a then
+                Ok a
+
+            else
+                Err error
+    in
+    source
+        |> Result.andThen fromPredicate
+
+
+containsOnly : List Char -> Specification Error String
+containsOnly allowedCharacters =
+    let
+        predicate input =
+            input
+                |> String.all (\character -> List.member character allowedCharacters)
+    in
+    toSpecification UnknownCharacter predicate
+
+
+enoughRows : Specification Error (List String)
+enoughRows =
+    toSpecification TooFewRows (\rows -> 3 <= List.length rows)
+
+
+columnsAgree : Specification Error (List (List Cell))
+columnsAgree =
+    let
+        inAgreement : List (List Cell) -> Bool
+        inAgreement result =
+            let
+                lengths =
+                    result
+                        |> List.map List.length
+
+                minimum =
+                    lengths
+                        |> List.minimum
+                        |> Maybe.withDefault 0
+
+                maximum =
+                    lengths
+                        |> List.maximum
+                        |> Maybe.withDefault 0
+            in
+            minimum == maximum
+    in
+    toSpecification ColumnsDoNotAgree inAgreement
+
+
+enoughColumns : Specification Error (List (List Cell))
+enoughColumns =
+    let
+        atLeast3 : List (List Cell) -> Bool
+        atLeast3 result =
+            result
+                |> List.map List.length
+                |> List.minimum
+                |> Maybe.withDefault 0
+                |> (<=) 3
+    in
+    toSpecification TooFewColumns atLeast3
 
 
 type Error
-    = General
+    = UnknownCharacter
+    | TooFewRows
+    | TooFewColumns
+    | ColumnsDoNotAgree
 
 
 type Msg
@@ -83,7 +174,7 @@ update _ aMaze =
 
 
 view : Configuration -> Maze -> Svg msg
-view configuration ((Maze { rows, columns, data }) as aMaze) =
+view configuration ((Maze { rows, columns }) as aMaze) =
     let
         dividers =
             max rows columns
@@ -92,33 +183,35 @@ view configuration ((Maze { rows, columns, data }) as aMaze) =
             divided dividers configuration
     in
     Svg.svg [ Attribute.width <| String.fromInt configuration.size, Attribute.height <| String.fromInt configuration.size ]
-        [ background configuration
-        , maze dividedConfiguration aMaze
-        , grid dividedConfiguration
+        [ viewBackground configuration
+        , viewMaze dividedConfiguration aMaze
+        , viewGrid dividedConfiguration
         ]
 
 
-maze : Divided Configuration -> Maze -> Svg msg
-maze configuration (Maze { rows, columns, data }) =
+viewMaze : Divided Configuration -> Maze -> Svg msg
+viewMaze configuration (Maze { rows, columns, data }) =
     let
-        dr = (configuration.dividers - rows) // 2
+        dr =
+            (configuration.dividers - rows) // 2
 
-        dc = (configuration.dividers - columns) // 2
+        dc =
+            (configuration.dividers - columns) // 2
 
-        toData x d =
+        toData y d =
             d
                 |> Dict.toList
-                |> List.map (\( y, content ) -> ( x + dr, y + dc, content ))
+                |> List.map (\( x, cell ) -> ( x + dr, y + dc, cell ))
     in
     data
         |> Dict.toList
-        |> List.concatMap (\( x, d ) -> toData x d)
-        |> List.map (toCell configuration)
+        |> List.concatMap (\( y, d ) -> toData y d)
+        |> List.map (viewCell configuration)
         |> Svg.g []
 
 
-toCell : Divided Configuration -> ( Int, Int, Content ) -> Svg msg
-toCell configuration ( row, column, content ) =
+viewCell : Divided Configuration -> ( Int, Int, Cell ) -> Svg msg
+viewCell configuration ( column, row, content ) =
     let
         gridSize =
             toFloat configuration.size / toFloat configuration.dividers
@@ -151,8 +244,8 @@ divided dividers configuration =
     }
 
 
-background : Configuration -> Svg msg
-background configuration =
+viewBackground : Configuration -> Svg msg
+viewBackground configuration =
     Svg.rect
         [ Attribute.width <| String.fromInt configuration.size
         , Attribute.height <| String.fromInt configuration.size
@@ -161,8 +254,8 @@ background configuration =
         []
 
 
-grid : Divided Configuration -> Svg msg
-grid configuration =
+viewGrid : Divided Configuration -> Svg msg
+viewGrid configuration =
     Svg.g [ Attribute.stroke configuration.gridColor ]
         [ horizontalLines configuration
         , verticalLines configuration

@@ -2,7 +2,7 @@ module Explore exposing (..)
 
 import Browser
 import Html exposing (Html)
-import Maze exposing (Configuration, Maze)
+import Maze exposing (Configuration, Error(..), Maze)
 import Svg
 import Svg.Attributes as SvgAttribute
 
@@ -71,12 +71,40 @@ view configuration model =
     model
         |> Result.map (Maze.view configuration)
         |> Result.map (Html.map MazeMessage)
-        |> Result.withDefault broken
+        |> withDefault broken
 
 
-broken : Html Msg
-broken =
-    Html.text "Something went wrong"
+withDefault : (e -> a) -> Result e a -> a
+withDefault transform result =
+    case result of
+        Ok verbatim ->
+            verbatim
+
+        Err e ->
+            transform e
+
+
+broken : Error -> Html Msg
+broken error =
+    let
+        errorMessage =
+            case error of
+                MazeError UnknownCharacter ->
+                    "Unknown character"
+
+                MazeError TooFewRows ->
+                    "Too few rows"
+
+                MazeError TooFewColumns ->
+                    "Too few columns"
+
+                MazeError ColumnsDoNotAgree ->
+                    "Columns do not agree"
+    in
+    Html.div []
+        [ Html.p [] [ Html.text "Something went wrong" ]
+        , Html.pre [] [ Html.text errorMessage ]
+        ]
 
 
 subscriptions : Model -> Sub Msg

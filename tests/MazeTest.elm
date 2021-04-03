@@ -1,0 +1,32 @@
+module MazeTest exposing (..)
+
+import Expect
+import Maze exposing (Error(..))
+import Test exposing (..)
+
+
+suite : Test
+suite =
+    describe "Maze"
+        [ describe "fromDescription"
+            [ describe "errors"
+                [ problem "unknown character" "," UnknownCharacter
+                , problem "one row is not enough" "#" TooFewRows
+                , problem "two rows is not enough" "#\n#" TooFewRows
+                , problem "columns not in agreement" "#\n#\n##" ColumnsDoNotAgree
+                , problem "one column is not enough" "#\n#\n#" TooFewColumns
+                , problem "two column is not enough" "##\n##\n##" TooFewColumns
+                 ]
+            ]
+        ]
+
+
+problem : String -> String -> Error -> Test
+problem testName description error =
+    test testName <|
+        \_ ->
+            let
+                actual =
+                    Maze.fromDescription description
+            in
+            Expect.equal actual <| Err error
