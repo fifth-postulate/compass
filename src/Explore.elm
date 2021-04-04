@@ -6,6 +6,7 @@ import Dict
 import Html exposing (Html)
 import Html.Events as Event
 import Maze exposing (Configuration, Error, Maze, Msg(..))
+import Time exposing (every)
 
 
 main : Program () (Model {}) Msg
@@ -25,7 +26,13 @@ type alias Model a =
 type alias Data a =
     { maze : Maze
     , automaton : Automaton a
+    , state : RunState
     }
+
+
+type RunState
+    = Pauzed
+    | Running
 
 
 type Error
@@ -42,9 +49,9 @@ mazeDescription =
     , "##.####..#.#"
     , "#...###....#"
     , "#..@####...#"
-    , "#....#.....#"
-    , "#..........#"
-    , "#..........#"
+    , "#....#...#.#"
+    , "#......#...#"
+    , "#.....#....#"
     , "############"
     ]
         |> String.join "\n"
@@ -110,7 +117,7 @@ init _ =
 
         model =
             aMaze
-                |> Result.map (\m -> { maze = m, automaton = automat })
+                |> Result.map (\m -> { maze = m, automaton = automat, state = Pauzed })
     in
     ( model, Cmd.none )
 
@@ -118,6 +125,9 @@ init _ =
 type Msg
     = MazeMessage Maze.Msg
     | Step
+    | Tick Int
+    | Stop
+    | Run
 
 
 update : Msg -> Model a -> ( Model a, Cmd Msg )
@@ -150,6 +160,20 @@ update message model =
                 Nothing ->
                     ( Ok data, Cmd.none )
 
+        ( Stop, Ok data ) ->
+            ( Ok { data | state = Pauzed }, Cmd.none )
+
+        ( Run, Ok data ) ->
+            ( Ok { data | state = Running }, Cmd.none )
+
+        ( Tick _, Ok { state } ) ->
+            case state of
+                Running ->
+                    update Step model
+
+                Pauzed ->
+                    ( model, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
 
@@ -176,7 +200,9 @@ view configuration model =
 viewControls : Html Msg
 viewControls =
     Html.div []
-        [ Html.button [ Event.onClick Step ] [ Html.text "🢒" ]
+        [ Html.button [ Event.onClick Stop ] [ Html.text "⏹" ]
+        , Html.button [ Event.onClick Step ] [ Html.text "🢒" ]
+        , Html.button [ Event.onClick Run ] [ Html.text "🢒🢒" ]
         ]
 
 
@@ -215,4 +241,6 @@ broken error =
 
 subscriptions : Model a -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Sub.batch
+        [ every 250 (Time.posixToMillis >> Tick)
+        ]
