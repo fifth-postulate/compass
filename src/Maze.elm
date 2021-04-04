@@ -1,4 +1,4 @@
-module Maze exposing (Configuration, Error(..), Maze, Msg, fromDescription, update, view)
+module Maze exposing (Configuration, Error(..), Maze, Msg, errorToString, fromDescription, update, view)
 
 import Dict exposing (Dict)
 import Svg exposing (Svg)
@@ -10,6 +10,7 @@ type alias Configuration =
     , barrierColor : String
     , gridColor : String
     , cellColor : String
+    , machineColor : String
     }
 
 
@@ -22,11 +23,13 @@ type Maze
         { rows : Int
         , columns : Int
         , data : Dict Int (Dict Int Cell)
+        , machine : Maybe ( Int, Int )
         }
 
 
 type Cell
     = Barrier
+    | Machine
     | Empty
 
 
@@ -36,12 +39,13 @@ fromDescription input =
         checkedInput : Result Error (List (List Cell))
         checkedInput =
             Ok input
-                |> containsOnly [ '#', '.', '\n' ]
+                |> containsOnly [ '#', '.', '@', '\n' ]
                 |> Result.map String.lines
                 |> enoughRows
                 |> Result.map (List.map toColumns)
                 |> columnsAgree
                 |> enoughColumns
+                |> oneAutomata
 
         toColumns : String -> List Cell
         toColumns aRow =
@@ -54,6 +58,9 @@ fromDescription input =
             case cell of
                 "." ->
                     Empty
+
+                "@" ->
+                    Machine
 
                 _ ->
                     Barrier
@@ -78,11 +85,39 @@ fromDescription input =
         toData : List Cell -> Dict Int Cell
         toData row =
             row
-                |> List.indexedMap (\x cell -> ( x, cell ))
+                |> List.indexedMap (\x cell -> ( x, occupied cell ))
                 |> Dict.fromList
+
+        occupied cell =
+            case cell of
+                Barrier ->
+                    Barrier
+
+                _ ->
+                    Empty
+
+        machine : List (List Cell) -> Maybe ( Int, Int )
+        machine raw =
+            raw
+                |> List.indexedMap (\y row -> List.indexedMap (\x cell -> ( x, y, cell )) row)
+                |> List.concat
+                |> locate Machine
+
+        locate : Cell -> List ( Int, Int, Cell ) -> Maybe ( Int, Int )
+        locate target cells =
+            case cells of
+                [] ->
+                    Nothing
+
+                ( x, y, candidate ) :: tails ->
+                    if candidate == target then
+                        Just ( x, y )
+
+                    else
+                        locate target tails
     in
     checkedInput
-        |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, data = data raw })
+        |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, data = data raw, machine = machine raw })
 
 
 type alias Specification e a =
@@ -157,11 +192,45 @@ enoughColumns =
     toSpecification TooFewColumns atLeast3
 
 
+oneAutomata : Specification Error (List (List Cell))
+oneAutomata =
+    let
+        atMost1 : List (List Cell) -> Bool
+        atMost1 result =
+            result
+                |> List.concat
+                |> List.filter ((==) Machine)
+                |> List.length
+                |> (>=) 1
+    in
+    toSpecification TooManyAutomata atMost1
+
+
 type Error
     = UnknownCharacter
     | TooFewRows
     | TooFewColumns
     | ColumnsDoNotAgree
+    | TooManyAutomata
+
+
+errorToString : Error -> String
+errorToString error =
+    case error of
+        UnknownCharacter ->
+            "unknown character"
+
+        TooFewRows ->
+            "too few rows"
+
+        TooFewColumns ->
+            "too few columns"
+
+        ColumnsDoNotAgree ->
+            "colums do not agree"
+
+        TooManyAutomata ->
+            "too many automata"
 
 
 type Msg
@@ -174,7 +243,7 @@ update _ aMaze =
 
 
 view : Configuration -> Maze -> Svg msg
-view configuration ((Maze { rows, columns }) as aMaze) =
+view configuration ((Maze { rows, columns, machine }) as aMaze) =
     let
         dividers =
             max rows columns
@@ -185,6 +254,7 @@ view configuration ((Maze { rows, columns }) as aMaze) =
     Svg.svg [ Attribute.width <| String.fromInt configuration.size, Attribute.height <| String.fromInt configuration.size ]
         [ viewBackground configuration
         , viewMaze dividedConfiguration aMaze
+        , viewMachine dividedConfiguration machine
         , viewGrid dividedConfiguration
         ]
 
@@ -218,11 +288,11 @@ viewCell configuration ( column, row, content ) =
 
         color =
             case content of
-                Barrier ->
-                    configuration.barrierColor
-
                 Empty ->
                     configuration.cellColor
+
+                _ ->
+                    configuration.barrierColor
     in
     Svg.rect
         [ Attribute.x <| String.fromFloat <| (*) gridSize <| toFloat <| column
@@ -240,8 +310,33 @@ divided dividers configuration =
     , barrierColor = configuration.barrierColor
     , gridColor = configuration.gridColor
     , cellColor = configuration.cellColor
+    , machineColor = configuration.machineColor
     , dividers = dividers
     }
+
+
+viewMachine : Divided Configuration -> Maybe ( Int, Int ) -> Svg msg
+viewMachine configuration location =
+    let
+        gridSize =
+            toFloat configuration.size / toFloat configuration.dividers
+
+        content =
+            location
+                |> Maybe.map toMachine
+                |> Maybe.map (\c -> [ c ])
+                |> Maybe.withDefault []
+
+        toMachine ( x, y ) =
+            Svg.circle
+                [ Attribute.cx <| String.fromFloat <| (*) gridSize <| (+) 0.5 <| toFloat x
+                , Attribute.cy <| String.fromFloat <| (*) gridSize <| (+) 0.5 <| toFloat y
+                , Attribute.r <| String.fromFloat <| (*) gridSize <| 0.45
+                , Attribute.fill <| configuration.machineColor
+                ]
+                []
+    in
+    Svg.g [] content
 
 
 viewBackground : Configuration -> Svg msg

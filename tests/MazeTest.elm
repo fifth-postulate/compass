@@ -16,6 +16,7 @@ suite =
                 , problem "columns not in agreement" "#\n#\n##" ColumnsDoNotAgree
                 , problem "one column is not enough" "#\n#\n#" TooFewColumns
                 , problem "two column is not enough" "##\n##\n##" TooFewColumns
+                , problem "at most one automaton" "####\n#@@#\n####" TooManyAutomata
                  ]
             ]
         ]

@@ -4,7 +4,7 @@ import Automaton exposing (Automaton, Compass(..), Status(..), action, automaton
 import Browser
 import Dict
 import Html exposing (Html)
-import Maze exposing (Configuration, Error(..), Maze)
+import Maze exposing (Configuration, Error, Maze)
 
 
 main : Program () (Model {}) Msg
@@ -12,7 +12,7 @@ main =
     Browser.element
         { init = init
         , update = update
-        , view = view { size = 640, barrierColor = "black", gridColor = "seashell", cellColor = "white" }
+        , view = view { size = 640, barrierColor = "black", gridColor = "seashell", cellColor = "white", machineColor = "seagreen" }
         , subscriptions = subscriptions
         }
 
@@ -40,7 +40,7 @@ maze =
     , "#..######..#"
     , "#..####....#"
     , "#...###....#"
-    , "#...####...#"
+    , "#..@####...#"
     , "#....#.....#"
     , "#..........#"
     , "#..........#"
@@ -127,17 +127,8 @@ broken error =
     let
         errorMessage =
             case error of
-                MazeError UnknownCharacter ->
-                    "Unknown character"
-
-                MazeError TooFewRows ->
-                    "Too few rows"
-
-                MazeError TooFewColumns ->
-                    "Too few columns"
-
-                MazeError ColumnsDoNotAgree ->
-                    "Columns do not agree"
+                MazeError e ->
+                    Maze.errorToString e
     in
     Html.div []
         [ Html.p [] [ Html.text "Something went wrong" ]
