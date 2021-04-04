@@ -1,4 +1,4 @@
-module Automaton exposing (Automaton, Compass(..), Rule, State, Status(..), action, automaton, rule, step)
+module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step)
 
 import Dict exposing (Dict)
 

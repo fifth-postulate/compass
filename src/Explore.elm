@@ -4,7 +4,8 @@ import Automaton exposing (Automaton, Compass(..), Status(..), action, automaton
 import Browser
 import Dict
 import Html exposing (Html)
-import Maze exposing (Configuration, Error, Maze)
+import Html.Events as Event
+import Maze exposing (Configuration, Error, Maze, Msg(..))
 
 
 main : Program () (Model {}) Msg
@@ -31,8 +32,8 @@ type Error
     = MazeError Maze.Error
 
 
-maze : String
-maze =
+mazeDescription : String
+mazeDescription =
     [ "############"
     , "#..........#"
     , "#..........#"
@@ -53,7 +54,7 @@ init : () -> ( Model {}, Cmd Msg )
 init _ =
     let
         aMaze =
-            maze
+            mazeDescription
                 |> Maze.fromDescription
                 |> Result.mapError MazeError
 
@@ -96,15 +97,71 @@ init _ =
 
 type Msg
     = MazeMessage Maze.Msg
+    | Step
 
 
 update : Msg -> Model a -> ( Model a, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update message model =
+    case ( message, model ) of
+        ( MazeMessage msg, Ok data ) ->
+            let
+                ( nextData, c ) =
+                    updateMaze msg data
+            in
+            ( Ok nextData, Cmd.map MazeMessage c )
+
+        ( Step, Ok ({ maze, automaton } as data) ) ->
+            let
+                situation =
+                    Maze.situation maze
+
+                nextStep =
+                    situation
+                        |> Maybe.andThen (\s -> Automaton.step s automaton)
+            in
+            case nextStep of
+                Just ( nextAutomaton, direction ) ->
+                    let
+                        ( nextMaze, cmd ) =
+                            Maze.update (Move direction) maze
+                    in
+                    ( Ok { data | automaton = nextAutomaton, maze = nextMaze }, Cmd.map MazeMessage cmd )
+
+                Nothing ->
+                    ( Ok data, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+updateMaze : Maze.Msg -> Data a -> ( Data a, Cmd Maze.Msg )
+updateMaze msg ({ maze } as data) =
+    let
+        ( nextMaze, cmd ) =
+            Maze.update msg maze
+    in
+    ( { data | maze = nextMaze }, cmd )
 
 
 view : Configuration -> Model a -> Html Msg
 view configuration model =
+    Html.div []
+        [ viewControls
+        , Html.div []
+            [ viewMaze configuration model
+            ]
+        ]
+
+
+viewControls : Html Msg
+viewControls =
+    Html.div []
+        [ Html.button [ Event.onClick Step ] [ Html.text "🢒" ]
+        ]
+
+
+viewMaze : Configuration -> Model a -> Html Msg
+viewMaze configuration model =
     model
         |> Result.map .maze
         |> Result.map (Maze.view configuration)

@@ -1,5 +1,6 @@
-module Maze exposing (Configuration, Error(..), Maze, Msg, errorToString, fromDescription, update, view)
+module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, go, situation, update, view)
 
+import Automaton exposing (Compass(..), Situation, Status(..))
 import Dict exposing (Dict)
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute
@@ -233,13 +234,68 @@ errorToString error =
             "too many automata"
 
 
+situation : Maze -> Maybe Situation
+situation (Maze { machine, data }) =
+    let
+        toSituation location =
+            { north = state <| lookup (go North location)
+            , east = state <| lookup (go East location)
+            , south = state <| lookup (go South location)
+            , west = state <| lookup (go West location)
+            }
+
+        lookup ( x, y ) =
+            data
+                |> Dict.get y
+                |> Maybe.andThen (Dict.get x)
+
+        state cell =
+            cell
+                |> Maybe.map cellToState
+                |> Maybe.withDefault Occupied
+
+        cellToState cell =
+            case cell of
+                Empty ->
+                    Free
+
+                _ ->
+                    Occupied
+    in
+    machine
+        |> Maybe.map toSituation
+
+
+go : Compass -> ( Int, Int ) -> ( Int, Int )
+go direction ( x, y ) =
+    case direction of
+        North ->
+            ( x, y - 1 )
+
+        East ->
+            ( x + 1, y )
+
+        South ->
+            ( x, y + 1 )
+
+        West ->
+            ( x - 1, y )
+
+
 type Msg
-    = DoNothing
+    = Move Compass
 
 
 update : Msg -> Maze -> ( Maze, Cmd Msg )
-update _ aMaze =
-    ( aMaze, Cmd.none )
+update message (Maze ({ machine } as data)) =
+    case message of
+        Move direction ->
+            let
+                nextMachine =
+                    machine
+                        |> Maybe.map (go direction)
+            in
+            ( Maze { data | machine = nextMachine }, Cmd.none )
 
 
 view : Configuration -> Maze -> Svg msg
