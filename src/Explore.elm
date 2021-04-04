@@ -37,9 +37,9 @@ mazeDescription =
     [ "############"
     , "#..........#"
     , "#..........#"
-    , "#....###...#"
-    , "#..######..#"
-    , "#..####....#"
+    , "#....#.#...#"
+    , "##.###.##..#"
+    , "##.####....#"
     , "#...###....#"
     , "#..@####...#"
     , "#....#.....#"
@@ -65,24 +65,32 @@ init _ =
                     [ rule Free Occupied Free Free <| action 0 North
                     , rule Free Free Free Free <| action 1 East
                     , rule Occupied Occupied Free Free <| action 2 West
+                    , rule Free Occupied Free Occupied <| action 0 North
+                    , rule Occupied Occupied Free Occupied <| action 3 South
                     ]
                 |> Dict.insert 1
                     -- East
                     [ rule Free Free Occupied Free <| action 1 East
                     , rule Free Free Free Free <| action 3 South
                     , rule Free Occupied Occupied Free <| action 0 North
+                    , rule Occupied Free Occupied Free <| action 1 East
+                    , rule Occupied Occupied Occupied Free <| action 2 West
                     ]
                 |> Dict.insert 2
                     -- West
                     [ rule Occupied Free Free Free <| action 2 West
                     , rule Free Free Free Free <| action 0 North
                     , rule Occupied Free Free Occupied <| action 3 South
+                    , rule Occupied Free Occupied Free <| action 2 West
+                    , rule Occupied Free Occupied Occupied <| action 1 East
                     ]
                 |> Dict.insert 3
                     -- South
                     [ rule Free Free Free Occupied <| action 3 South
                     , rule Free Free Free Free <| action 2 West
                     , rule Free Free Occupied Occupied <| action 1 East
+                    , rule Free Occupied Free Occupied <| action 3 South
+                    , rule Free Occupied Occupied Occupied <| action 0 North
                     ]
 
         automat =
