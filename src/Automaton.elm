@@ -1,7 +1,8 @@
 module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step, view)
 
 import Dict exposing (Dict)
-import Html exposing (Html, table)
+import Html as BasicHtml
+import Html.Styled as Html exposing (Html, table)
 
 
 automaton : State -> Dict State (List (Rule a)) -> Automaton a
@@ -113,12 +114,13 @@ flip f b a =
     f a b
 
 
-view : Automaton a -> Html msg
+view : Automaton a -> BasicHtml.Html msg
 view (Automaton { current, table }) =
     Html.div []
         [ viewCurrentState current
         , viewTable table
         ]
+    |> Html.toUnstyled
 
 
 viewCurrentState : Int -> Html msg
