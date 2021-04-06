@@ -1,8 +1,10 @@
 module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step, view)
 
+import Css exposing (..)
 import Dict exposing (Dict)
 import Html as BasicHtml
 import Html.Styled as Html exposing (Html, table)
+import Html.Styled.Attributes as Attribute
 
 
 automaton : State -> Dict State (List (Rule a)) -> Automaton a
@@ -120,7 +122,7 @@ view (Automaton { current, table }) =
         [ viewCurrentState current
         , viewTable table
         ]
-    |> Html.toUnstyled
+        |> Html.toUnstyled
 
 
 viewCurrentState : Int -> Html msg
@@ -139,14 +141,15 @@ viewTable table =
         rows =
             states
                 |> List.map (viewState table)
+
         situations =
             List.range 0 15
                 |> List.map situationFromInt
                 |> List.map viewSituationHeader
-     in
+    in
     Html.table []
         [ Html.thead []
-            [ Html.tr [] <| (Html.td [] [ Html.text "State" ]) :: situations
+            [ Html.tr [] <| Html.td [] [] :: situations
             ]
         , Html.tbody []
             rows
@@ -154,8 +157,34 @@ viewTable table =
 
 
 viewSituationHeader : Situation -> Html msg
-viewSituationHeader {north, east, south, west} =
-    Html.td [] [Html.span [] [ Html.text "p"]]
+viewSituationHeader { north, east, south, west } =
+    let
+        toWidth status =
+            case status of
+                Free ->
+                    px 1
+
+                Occupied ->
+                    px 3
+    in
+    Html.td []
+        [ Html.span
+            [ Attribute.css
+                [ display inlineBlock
+                , width <| px 15
+                , height <| px 15
+                , boxSizing borderBox
+                , borderStyle solid
+                , borderColor <| hex "000000"
+                , borderTopWidth <| toWidth north
+                , borderRightWidth <| toWidth east
+                , borderBottomWidth <| toWidth south
+                , borderLeftWidth <| toWidth west
+                ]
+            ]
+            []
+        ]
+
 
 viewState : Dict State (List (Rule a)) -> State -> Html msg
 viewState table state =
