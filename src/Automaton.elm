@@ -118,16 +118,8 @@ flip f b a =
 
 view : Automaton a -> BasicHtml.Html msg
 view (Automaton { current, table }) =
-    Html.div []
-        [ viewCurrentState current
-        , viewTable table
-        ]
+    viewTable table
         |> Html.toUnstyled
-
-
-viewCurrentState : Int -> Html msg
-viewCurrentState current =
-    Html.span [] [ Html.text <| (++) "Current state: " <| String.fromInt current ]
 
 
 viewTable : Dict State (List (Rule a)) -> Html msg
