@@ -140,7 +140,8 @@ viewTable table =
 
         rows =
             states
-                |> List.map (viewState table)
+                |> List.map (\state -> ( state, Dict.get state table |> Maybe.withDefault [] ))
+                |> List.map (uncurry viewState)
 
         situations =
             List.range 0 15
@@ -186,16 +187,43 @@ viewSituationHeader { north, east, south, west } =
         ]
 
 
-viewState : Dict State (List (Rule a)) -> State -> Html msg
-viewState table state =
+viewState : State -> List (Rule a) -> Html msg
+viewState state rules =
     let
         situations =
             List.range 0 15
                 |> List.map situationFromInt
+                |> List.map (\situation -> lookup situation rules)
+                |> List.map (Maybe.map viewAction)
+                |> List.map (Maybe.withDefault <| Html.td [] [])
     in
-    Html.tr []
-        [ Html.td [] [ Html.text <| String.fromInt state ]
-        ]
+    Html.tr [] <|
+        Html.td [] [ Html.text <| String.fromInt state ]
+            :: situations
+
+
+viewAction : Rule a -> Html msg
+viewAction aRule =
+    let
+        next =
+            aRule.action.nextState
+                |> String.fromInt
+
+        direction =
+            case aRule.action.direction of
+                North ->
+                    "↑"
+
+                East ->
+                    "→"
+
+                South ->
+                    "↓"
+
+                West ->
+                    "←"
+    in
+    Html.td [] [ Html.text <| next ++ direction ]
 
 
 situationFromInt : Int -> Situation
@@ -230,3 +258,8 @@ situationFromInt n =
                 |> toStatus
     in
     { north = north, east = east, south = south, west = west }
+
+
+uncurry : (a -> b -> c) -> ( a, b ) -> c
+uncurry f ( a, b ) =
+    f a b
