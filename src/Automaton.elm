@@ -2,7 +2,6 @@ module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Statu
 
 import Css exposing (..)
 import Dict exposing (Dict)
-import Html as BasicHtml
 import Html.Styled as Html exposing (Html, table)
 import Html.Styled.Attributes as Attribute
 
@@ -116,10 +115,9 @@ flip f b a =
     f a b
 
 
-view : Automaton a -> BasicHtml.Html msg
+view : Automaton a -> Html msg
 view (Automaton { current, table }) =
     viewTable table
-        |> Html.toUnstyled
 
 
 viewTable : Dict State (List (Rule a)) -> Html msg

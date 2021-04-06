@@ -2,9 +2,11 @@ module Explore exposing (..)
 
 import Automaton exposing (Automaton, Compass(..), Status(..), action, automaton, rule)
 import Browser
+import Css exposing (..)
 import Dict
-import Html exposing (Html)
-import Html.Events as Event
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes as Attribute
+import Html.Styled.Events as Event
 import Maze exposing (Configuration, Error, Maze, Msg(..))
 import Time exposing (every)
 
@@ -14,7 +16,9 @@ main =
     Browser.element
         { init = init
         , update = update
-        , view = view { size = 640, barrierColor = "black", gridColor = "seashell", cellColor = "white", machineColor = "seagreen" }
+        , view =
+            view { size = 640, barrierColor = "black", gridColor = "seashell", cellColor = "white", machineColor = "seagreen" }
+                >> Html.toUnstyled
         , subscriptions = subscriptions
         }
 
@@ -191,7 +195,15 @@ view : Configuration -> Model a -> Html Msg
 view configuration model =
     Html.div []
         [ viewControls
-        , Html.div []
+        , Html.div
+            [ Attribute.css
+                [ displayFlex
+                , flexDirection row
+                , flexWrap noWrap
+                , justifyContent center
+                , alignItems flexStart
+                ]
+            ]
             [ viewMaze configuration model
             , viewAutomaton model
             ]
@@ -200,7 +212,12 @@ view configuration model =
 
 viewControls : Html Msg
 viewControls =
-    Html.div []
+    Html.div [ Attribute.css [
+        displayFlex,
+        flexDirection row
+        , flexWrap noWrap
+        , justifyContent center
+    ]]
         [ Html.button [ Event.onClick Stop ] [ Html.text "⏹" ]
         , Html.button [ Event.onClick Step ] [ Html.text "🢒" ]
         , Html.button [ Event.onClick Run ] [ Html.text "🢒🢒" ]
@@ -212,6 +229,7 @@ viewMaze configuration model =
     model
         |> Result.map .maze
         |> Result.map (Maze.view configuration)
+        |> Result.map Html.fromUnstyled
         |> Result.map (Html.map MazeMessage)
         |> withDefault broken
 
