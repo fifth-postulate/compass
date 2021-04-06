@@ -1,13 +1,13 @@
-module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step)
+module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step, view)
 
 import Dict exposing (Dict)
+import Html exposing (Html, table)
 
 
 automaton : State -> Dict State (List (Rule a)) -> Automaton a
 automaton start table =
     Automaton
-        { start = start
-        , current = start
+        { current = start
         , table = table
         }
 
@@ -17,8 +17,7 @@ type Automaton a
 
 
 type alias Data a =
-    { start : State
-    , current : State
+    { current : State
     , table : Dict State (List (Rule a))
     }
 
@@ -112,3 +111,91 @@ apply { nextState, direction } (Automaton data) =
 flip : (a -> b -> c) -> b -> a -> c
 flip f b a =
     f a b
+
+
+view : Automaton a -> Html msg
+view (Automaton { current, table }) =
+    Html.div []
+        [ viewCurrentState current
+        , viewTable table
+        ]
+
+
+viewCurrentState : Int -> Html msg
+viewCurrentState current =
+    Html.span [] [ Html.text <| (++) "Current state: " <| String.fromInt current ]
+
+
+viewTable : Dict State (List (Rule a)) -> Html msg
+viewTable table =
+    let
+        states =
+            table
+                |> Dict.keys
+                |> List.sort
+
+        rows =
+            states
+                |> List.map (viewState table)
+        situations =
+            List.range 0 15
+                |> List.map situationFromInt
+                |> List.map viewSituationHeader
+     in
+    Html.table []
+        [ Html.thead []
+            [ Html.tr [] <| (Html.td [] [ Html.text "State" ]) :: situations
+            ]
+        , Html.tbody []
+            rows
+        ]
+
+
+viewSituationHeader : Situation -> Html msg
+viewSituationHeader {north, east, south, west} =
+    Html.td [] [Html.span [] [ Html.text "p"]]
+
+viewState : Dict State (List (Rule a)) -> State -> Html msg
+viewState table state =
+    let
+        situations =
+            List.range 0 15
+                |> List.map situationFromInt
+    in
+    Html.tr []
+        [ Html.td [] [ Html.text <| String.fromInt state ]
+        ]
+
+
+situationFromInt : Int -> Situation
+situationFromInt n =
+    let
+        toStatus d =
+            case d of
+                0 ->
+                    Free
+
+                _ ->
+                    Occupied
+
+        north =
+            n
+                |> modBy 2
+                |> toStatus
+
+        east =
+            (n // 2)
+                |> modBy 2
+                |> toStatus
+
+        south =
+            (n // 4)
+                |> modBy 2
+                |> toStatus
+
+        west =
+            (n // 8)
+                |> modBy 2
+                |> toStatus
+    in
+    { north = north, east = east, south = south, west = west }

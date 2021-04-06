@@ -193,6 +193,7 @@ view configuration model =
         [ viewControls
         , Html.div []
             [ viewMaze configuration model
+            , viewAutomaton model
             ]
         ]
 
@@ -225,6 +226,14 @@ withDefault transform result =
             transform e
 
 
+viewAutomaton : Model a -> Html Msg
+viewAutomaton model =
+    model
+        |> Result.map .automaton
+        |> Result.map Automaton.view
+        |> withDefault empty
+
+
 broken : Error -> Html Msg
 broken error =
     let
@@ -237,6 +246,11 @@ broken error =
         [ Html.p [] [ Html.text "Something went wrong" ]
         , Html.pre [] [ Html.text errorMessage ]
         ]
+
+
+empty : Error -> Html Msg
+empty _ =
+    Html.div [] []
 
 
 subscriptions : Model a -> Sub Msg
