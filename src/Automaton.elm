@@ -117,11 +117,11 @@ flip f b a =
 
 view : Automaton a -> Html msg
 view (Automaton { current, table }) =
-    viewTable table
+    viewTable current table
 
 
-viewTable : Dict State (List (Rule a)) -> Html msg
-viewTable table =
+viewTable : State -> Dict State (List (Rule a)) -> Html msg
+viewTable current table =
     let
         states =
             table
@@ -131,14 +131,14 @@ viewTable table =
         rows =
             states
                 |> List.map (\state -> ( state, Dict.get state table |> Maybe.withDefault [] ))
-                |> List.map (uncurry viewState)
+                |> List.map (uncurry (viewState current))
 
         situations =
             List.range 0 15
                 |> List.map situationFromInt
                 |> List.map viewSituationHeader
     in
-    Html.table []
+    Html.table [ Attribute.css [ borderCollapse collapse ] ]
         [ Html.thead []
             [ Html.tr [] <| Html.td [] [] :: situations
             ]
@@ -177,8 +177,8 @@ viewSituationHeader { north, east, south, west } =
         ]
 
 
-viewState : State -> List (Rule a) -> Html msg
-viewState state rules =
+viewState : State -> State -> List (Rule a) -> Html msg
+viewState current state rules =
     let
         situations =
             List.range 0 15
@@ -186,8 +186,15 @@ viewState state rules =
                 |> List.map (\situation -> lookup situation rules)
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
+
+        bgc =
+            if current == state then
+                [ backgroundColor <| hex "FFF5EE" ]
+
+            else
+                []
     in
-    Html.tr [] <|
+    Html.tr [ Attribute.css <| bgc ] <|
         Html.td [] [ Html.text <| String.fromInt state ]
             :: situations
 
