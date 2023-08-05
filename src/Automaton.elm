@@ -56,18 +56,13 @@ step surrounding ((Automaton { current, table }) as automat) =
     table
         |> Dict.get current
         |> Maybe.andThen (Rule.lookup surrounding)
-        |> Maybe.map .action
-        |> Maybe.map (flip apply <| automat)
+        |> Maybe.map Rule.action
+        |> Maybe.map (apply automat)
 
 
-apply : Action -> Automaton a -> ( Automaton a, Compass )
-apply { nextState, heading } (Automaton data) =
+apply : Automaton a -> Action -> ( Automaton a, Compass )
+apply (Automaton data) { nextState, heading } =
     ( Automaton { data | current = nextState }, heading )
-
-
-flip : (a -> b -> c) -> b -> a -> c
-flip f b a =
-    f a b
 
 
 view : Automaton a -> Html msg
@@ -143,7 +138,7 @@ viewState current state rules =
         surroundings =
             List.range 0 15
                 |> List.map surroundingFromInt
-                |> List.map (\surrounding -> Rule.lookup surrounding rules)
+                |> List.map (flip Rule.lookup rules)
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
 
@@ -158,6 +153,11 @@ viewState current state rules =
     Html.tr [ Attribute.css <| bgc ] <|
         Html.td [] [ Html.text <| String.fromInt state ]
             :: surroundings
+
+
+flip : (a -> b -> c) -> b -> a -> c
+flip f b a =
+    f a b
 
 
 viewAction : Rule a -> Html msg

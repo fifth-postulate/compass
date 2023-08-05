@@ -1,4 +1,4 @@
-module Automaton.Rule exposing (Rule, lookup, rule)
+module Automaton.Rule exposing (Rule, action, lookup, rule)
 
 import Automaton.Action exposing (Action)
 import Automaton.Cell exposing (CellType, Surrounding)
@@ -39,3 +39,8 @@ match surrounding aRule =
         && (surrounding.east == aRule.east)
         && (surrounding.south == aRule.south)
         && (surrounding.west == aRule.west)
+
+
+action : Rule a -> Action
+action r =
+    r.action
