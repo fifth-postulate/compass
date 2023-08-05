@@ -1,5 +1,6 @@
-module Automaton exposing (Action, Automaton, Rule, Situation, CellType(..), action, automaton, rule, step, view)
+module Automaton exposing (Action, Automaton, Rule, Situation, action, automaton, rule, step, view)
 
+import Automaton.Cell exposing (CellType(..))
 import Automaton.Compass as Compass exposing (Compass)
 import Automaton.State exposing (State)
 import Css
@@ -61,11 +62,6 @@ type alias Rule a =
 rule : CellType -> CellType -> CellType -> CellType -> Action -> Rule {}
 rule north east south west anAction =
     { north = north, east = east, south = south, west = west, action = anAction }
-
-
-type CellType
-    = Occupied
-    | Free
 
 
 type alias Action =
