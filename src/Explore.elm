@@ -212,12 +212,14 @@ view configuration model =
 
 viewControls : Html Msg
 viewControls =
-    Html.div [ Attribute.css [
-        displayFlex,
-        flexDirection row
-        , flexWrap noWrap
-        , justifyContent center
-    ]]
+    Html.div
+        [ Attribute.css
+            [ displayFlex
+            , flexDirection row
+            , flexWrap noWrap
+            , justifyContent center
+            ]
+        ]
         [ Html.button [ Event.onClick Stop ] [ Html.text "⏹" ]
         , Html.button [ Event.onClick Step ] [ Html.text "🢒" ]
         , Html.button [ Event.onClick Run ] [ Html.text "🢒🢒" ]
