@@ -1,4 +1,4 @@
-module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, go, situation, update, view)
+module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
 
 import Automaton exposing (Compass(..), Situation, Status(..))
 import Dict exposing (Dict)
@@ -89,6 +89,7 @@ fromDescription input =
                 |> List.indexedMap (\x cell -> ( x, occupied cell ))
                 |> Dict.fromList
 
+        occupied : Cell -> Cell
         occupied cell =
             case cell of
                 Barrier ->
@@ -128,6 +129,7 @@ type alias Specification e a =
 toSpecification : e -> (a -> Bool) -> Specification e a
 toSpecification error predicate source =
     let
+        fromPredicate : a -> Result e a
         fromPredicate a =
             if predicate a then
                 Ok a
@@ -142,6 +144,7 @@ toSpecification error predicate source =
 containsOnly : List Char -> Specification Error String
 containsOnly allowedCharacters =
     let
+        predicate : String -> Bool
         predicate input =
             input
                 |> String.all (\character -> List.member character allowedCharacters)
@@ -160,15 +163,18 @@ columnsAgree =
         inAgreement : List (List Cell) -> Bool
         inAgreement result =
             let
+                lengths : List Int
                 lengths =
                     result
                         |> List.map List.length
 
+                minimum : Int
                 minimum =
                     lengths
                         |> List.minimum
                         |> Maybe.withDefault 0
 
+                maximum : Int
                 maximum =
                     lengths
                         |> List.maximum
@@ -184,11 +190,12 @@ enoughColumns =
     let
         atLeast3 : List (List Cell) -> Bool
         atLeast3 result =
-            result
-                |> List.map List.length
-                |> List.minimum
-                |> Maybe.withDefault 0
-                |> (<=) 3
+            3
+                <= (result
+                        |> List.map List.length
+                        |> List.minimum
+                        |> Maybe.withDefault 0
+                   )
     in
     toSpecification TooFewColumns atLeast3
 
@@ -198,11 +205,12 @@ oneAutomata =
     let
         atMost1 : List (List Cell) -> Bool
         atMost1 result =
-            result
-                |> List.concat
-                |> List.filter ((==) Machine)
-                |> List.length
-                |> (>=) 1
+            1
+                >= (result
+                        |> List.concat
+                        |> List.filter ((==) Machine)
+                        |> List.length
+                   )
     in
     toSpecification TooManyAutomata atMost1
 
@@ -237,6 +245,7 @@ errorToString error =
 situation : Maze -> Maybe Situation
 situation (Maze { machine, data }) =
     let
+        toSituation : ( Int, Int ) -> Situation
         toSituation location =
             { north = state <| lookup (go North location)
             , east = state <| lookup (go East location)
@@ -244,16 +253,19 @@ situation (Maze { machine, data }) =
             , west = state <| lookup (go West location)
             }
 
+        lookup : ( Int, Int ) -> Maybe Cell
         lookup ( x, y ) =
             data
                 |> Dict.get y
                 |> Maybe.andThen (Dict.get x)
 
+        state : Maybe Cell -> Status
         state cell =
             cell
                 |> Maybe.map cellToState
                 |> Maybe.withDefault Occupied
 
+        cellToState : Cell -> Status
         cellToState cell =
             case cell of
                 Empty ->
@@ -291,6 +303,7 @@ update message (Maze ({ machine } as data)) =
     case message of
         Move direction ->
             let
+                nextMachine : Maybe ( Int, Int )
                 nextMachine =
                     machine
                         |> Maybe.map (go direction)
@@ -301,9 +314,11 @@ update message (Maze ({ machine } as data)) =
 view : Configuration -> Maze -> Svg msg
 view configuration ((Maze { rows, columns, machine }) as aMaze) =
     let
+        dividers : Int
         dividers =
             max rows columns
 
+        dividedConfiguration : Divided Configuration
         dividedConfiguration =
             divided dividers configuration
     in
@@ -318,12 +333,15 @@ view configuration ((Maze { rows, columns, machine }) as aMaze) =
 viewMaze : Divided Configuration -> Maze -> Svg msg
 viewMaze configuration (Maze { rows, columns, data }) =
     let
+        dr : Int
         dr =
             (configuration.dividers - rows) // 2
 
+        dc : Int
         dc =
             (configuration.dividers - columns) // 2
 
+        toData : Int -> Dict Int Cell -> List ( Int, Int, Cell )
         toData y d =
             d
                 |> Dict.toList
@@ -339,9 +357,11 @@ viewMaze configuration (Maze { rows, columns, data }) =
 viewCell : Divided Configuration -> ( Int, Int, Cell ) -> Svg msg
 viewCell configuration ( column, row, content ) =
     let
+        gridSize : Float
         gridSize =
             toFloat configuration.size / toFloat configuration.dividers
 
+        color : String
         color =
             case content of
                 Empty ->
@@ -374,15 +394,18 @@ divided dividers configuration =
 viewMachine : Divided Configuration -> Maybe ( Int, Int ) -> Svg msg
 viewMachine configuration location =
     let
+        gridSize : Float
         gridSize =
             toFloat configuration.size / toFloat configuration.dividers
 
+        content : List (Svg msg)
         content =
             location
                 |> Maybe.map toMachine
                 |> Maybe.map (\c -> [ c ])
                 |> Maybe.withDefault []
 
+        toMachine : ( Int, Int ) -> Svg msg
         toMachine ( x, y ) =
             Svg.circle
                 [ Attribute.cx <| String.fromFloat <| (*) gridSize <| (+) 0.5 <| toFloat x
@@ -426,6 +449,7 @@ verticalLines configuration =
 lines : Divided Configuration -> (Float -> Svg msg) -> Svg msg
 lines ({ dividers } as configuration) toLine =
     let
+        gridSize : Float
         gridSize =
             toFloat configuration.size / toFloat dividers
     in

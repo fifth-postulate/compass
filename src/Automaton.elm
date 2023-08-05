@@ -1,8 +1,30 @@
-module Automaton exposing (Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step, view)
+module Automaton exposing (Action, Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step, view)
 
-import Css exposing (..)
+import Css
+    exposing
+        ( Px
+        , Style
+        , borderBottomWidth
+        , borderBox
+        , borderCollapse
+        , borderColor
+        , borderLeftWidth
+        , borderRightWidth
+        , borderStyle
+        , borderTopWidth
+        , boxSizing
+        , collapse
+        , display
+        , height
+        , hex
+        , inlineBlock
+        , px
+        , solid
+        , width
+        , backgroundColor
+        )
 import Dict exposing (Dict)
-import Html.Styled as Html exposing (Html, table)
+import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attribute
 
 
@@ -123,16 +145,19 @@ view (Automaton { current, table }) =
 viewTable : State -> Dict State (List (Rule a)) -> Html msg
 viewTable current table =
     let
+        states : List State
         states =
             table
                 |> Dict.keys
                 |> List.sort
 
+        rows : List (Html msg)
         rows =
             states
                 |> List.map (\state -> ( state, Dict.get state table |> Maybe.withDefault [] ))
                 |> List.map (uncurry (viewState current))
 
+        situations : List (Html msg)
         situations =
             List.range 0 15
                 |> List.map situationFromInt
@@ -150,6 +175,7 @@ viewTable current table =
 viewSituationHeader : Situation -> Html msg
 viewSituationHeader { north, east, south, west } =
     let
+        toWidth : Status -> Px
         toWidth status =
             case status of
                 Free ->
@@ -180,6 +206,7 @@ viewSituationHeader { north, east, south, west } =
 viewState : State -> State -> List (Rule a) -> Html msg
 viewState current state rules =
     let
+        situations : List (Html msg)
         situations =
             List.range 0 15
                 |> List.map situationFromInt
@@ -187,6 +214,7 @@ viewState current state rules =
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
 
+        bgc : List Style
         bgc =
             if current == state then
                 [ backgroundColor <| hex "FFF5EE" ]
@@ -202,10 +230,12 @@ viewState current state rules =
 viewAction : Rule a -> Html msg
 viewAction aRule =
     let
+        next : String
         next =
             aRule.action.nextState
                 |> String.fromInt
 
+        direction : String
         direction =
             case aRule.action.direction of
                 North ->
@@ -226,6 +256,7 @@ viewAction aRule =
 situationFromInt : Int -> Situation
 situationFromInt n =
     let
+        toStatus : Int -> Status
         toStatus d =
             case d of
                 0 ->
@@ -234,21 +265,25 @@ situationFromInt n =
                 _ ->
                     Occupied
 
+        north : Status
         north =
             n
                 |> modBy 2
                 |> toStatus
 
+        east : Status
         east =
             (n // 2)
                 |> modBy 2
                 |> toStatus
 
+        south : Status
         south =
             (n // 4)
                 |> modBy 2
                 |> toStatus
 
+        west : Status
         west =
             (n // 8)
                 |> modBy 2

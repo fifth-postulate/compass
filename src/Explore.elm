@@ -1,9 +1,9 @@
-module Explore exposing (..)
+module Explore exposing (main)
 
-import Automaton exposing (Automaton, Compass(..), Status(..), action, automaton, rule)
+import Automaton exposing (Automaton, Compass(..), Rule, Situation, Status(..), action, automaton, rule)
 import Browser
-import Css exposing (..)
-import Dict
+import Css exposing (alignItems, center, displayFlex, flexDirection, flexStart, flexWrap, justifyContent, noWrap, row)
+import Dict exposing (Dict)
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attribute
 import Html.Styled.Events as Event
@@ -64,64 +64,72 @@ mazeDescription =
 init : () -> ( Model {}, Cmd Msg )
 init _ =
     let
+        aMaze : Result Error Maze
         aMaze =
             mazeDescription
                 |> Maze.fromDescription
                 |> Result.mapError MazeError
 
-        rules =
-            Dict.empty
-                |> Dict.insert 0
-                    -- North
-                    [ rule Free Occupied Free Free <| action 0 North
-                    , rule Free Free Free Free <| action 1 East
-                    , rule Occupied Occupied Free Free <| action 2 West
-                    , rule Free Occupied Free Occupied <| action 0 North
-                    , rule Occupied Occupied Free Occupied <| action 3 South
-                    , rule Occupied Free Free Free <| action 1 East
-                    , rule Occupied Free Free Occupied <| action 1 East
-                    , rule Free Free Free Occupied <| action 1 East
-                    ]
-                |> Dict.insert 1
-                    -- East
-                    [ rule Free Free Occupied Free <| action 1 East
-                    , rule Free Free Free Free <| action 3 South
-                    , rule Free Occupied Occupied Free <| action 0 North
-                    , rule Occupied Free Occupied Free <| action 1 East
-                    , rule Occupied Occupied Occupied Free <| action 2 West
-                    , rule Free Occupied Free Free <| action 3 South
-                    , rule Occupied Occupied Free Free <| action 3 South
-                    , rule Occupied Free Free Free <| action 3 South
-                    ]
-                |> Dict.insert 2
-                    -- West
-                    [ rule Occupied Free Free Free <| action 2 West
-                    , rule Free Free Free Free <| action 0 North
-                    , rule Occupied Free Free Occupied <| action 3 South
-                    , rule Occupied Free Occupied Free <| action 2 West
-                    , rule Occupied Free Occupied Occupied <| action 1 East
-                    , rule Free Free Free Occupied <| action 0 North
-                    , rule Free Free Occupied Occupied <| action 0 North
-                    , rule Free Free Occupied Free <| action 0 North
-                    ]
-                |> Dict.insert 3
-                    -- South
-                    [ rule Free Free Free Occupied <| action 3 South
-                    , rule Free Free Free Free <| action 2 West
-                    , rule Free Free Occupied Occupied <| action 1 East
-                    , rule Free Occupied Free Occupied <| action 3 South
-                    , rule Free Occupied Occupied Occupied <| action 0 North
-                    , rule Free Free Occupied Free <| action 2 West
-                    , rule Free Occupied Occupied Free <| action 2 West
-                    , rule Free Occupied Free Free <| action 2 West
-                    ]
-
-        automat =
-            automaton 0 rules
-
+        model : Model {}
         model =
             aMaze
-                |> Result.map (\m -> { maze = m, automaton = automat, state = Pauzed })
+                |> Result.map
+                    (\m ->
+                        let
+                            rules : Dict Int (List (Rule {}))
+                            rules =
+                                Dict.empty
+                                    |> Dict.insert 0
+                                        -- North
+                                        [ rule Free Occupied Free Free <| action 0 North
+                                        , rule Free Free Free Free <| action 1 East
+                                        , rule Occupied Occupied Free Free <| action 2 West
+                                        , rule Free Occupied Free Occupied <| action 0 North
+                                        , rule Occupied Occupied Free Occupied <| action 3 South
+                                        , rule Occupied Free Free Free <| action 1 East
+                                        , rule Occupied Free Free Occupied <| action 1 East
+                                        , rule Free Free Free Occupied <| action 1 East
+                                        ]
+                                    |> Dict.insert 1
+                                        -- East
+                                        [ rule Free Free Occupied Free <| action 1 East
+                                        , rule Free Free Free Free <| action 3 South
+                                        , rule Free Occupied Occupied Free <| action 0 North
+                                        , rule Occupied Free Occupied Free <| action 1 East
+                                        , rule Occupied Occupied Occupied Free <| action 2 West
+                                        , rule Free Occupied Free Free <| action 3 South
+                                        , rule Occupied Occupied Free Free <| action 3 South
+                                        , rule Occupied Free Free Free <| action 3 South
+                                        ]
+                                    |> Dict.insert 2
+                                        -- West
+                                        [ rule Occupied Free Free Free <| action 2 West
+                                        , rule Free Free Free Free <| action 0 North
+                                        , rule Occupied Free Free Occupied <| action 3 South
+                                        , rule Occupied Free Occupied Free <| action 2 West
+                                        , rule Occupied Free Occupied Occupied <| action 1 East
+                                        , rule Free Free Free Occupied <| action 0 North
+                                        , rule Free Free Occupied Occupied <| action 0 North
+                                        , rule Free Free Occupied Free <| action 0 North
+                                        ]
+                                    |> Dict.insert 3
+                                        -- South
+                                        [ rule Free Free Free Occupied <| action 3 South
+                                        , rule Free Free Free Free <| action 2 West
+                                        , rule Free Free Occupied Occupied <| action 1 East
+                                        , rule Free Occupied Free Occupied <| action 3 South
+                                        , rule Free Occupied Occupied Occupied <| action 0 North
+                                        , rule Free Free Occupied Free <| action 2 West
+                                        , rule Free Occupied Occupied Free <| action 2 West
+                                        , rule Free Occupied Free Free <| action 2 West
+                                        ]
+
+                            automat : Automaton {}
+                            automat =
+                                automaton 0 rules
+                        in
+                        { maze = m, automaton = automat, state = Pauzed }
+                    )
     in
     ( model, Cmd.none )
 
@@ -129,7 +137,7 @@ init _ =
 type Msg
     = MazeMessage Maze.Msg
     | Step
-    | Tick Int
+    | Tick
     | Stop
     | Run
 
@@ -146,9 +154,11 @@ update message model =
 
         ( Step, Ok ({ maze, automaton } as data) ) ->
             let
+                situation : Maybe Situation
                 situation =
                     Maze.situation maze
 
+                nextStep : Maybe ( Automaton a, Compass )
                 nextStep =
                     situation
                         |> Maybe.andThen (\s -> Automaton.step s automaton)
@@ -170,7 +180,7 @@ update message model =
         ( Run, Ok data ) ->
             ( Ok { data | state = Running }, Cmd.none )
 
-        ( Tick _, Ok { state } ) ->
+        ( Tick, Ok { state } ) ->
             case state of
                 Running ->
                     update Step model
@@ -257,6 +267,7 @@ viewAutomaton model =
 broken : Error -> Html Msg
 broken error =
     let
+        errorMessage : String
         errorMessage =
             case error of
                 MazeError e ->
@@ -275,6 +286,4 @@ empty _ =
 
 subscriptions : Model a -> Sub Msg
 subscriptions _ =
-    Sub.batch
-        [ every 250 (Time.posixToMillis >> Tick)
-        ]
+    every 250 (\_ -> Tick)

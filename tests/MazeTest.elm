@@ -1,8 +1,8 @@
-module MazeTest exposing (..)
+module MazeTest exposing (suite)
 
 import Expect
-import Maze exposing (Error(..))
-import Test exposing (..)
+import Maze exposing (Error(..), Maze)
+import Test exposing (Test, describe, test)
 
 
 suite : Test
@@ -27,6 +27,7 @@ problem testName description error =
     test testName <|
         \_ ->
             let
+                actual : Result Error Maze
                 actual =
                     Maze.fromDescription description
             in
