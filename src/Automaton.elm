@@ -1,9 +1,11 @@
-module Automaton exposing (Action, Automaton, Compass(..), Rule, Situation, State, Status(..), action, automaton, rule, step, view)
+module Automaton exposing (Action, Automaton, Compass(..), Rule, Situation, Status(..), action, automaton, rule, step, view)
 
+import Automaton.State exposing (State)
 import Css
     exposing
         ( Px
         , Style
+        , backgroundColor
         , borderBottomWidth
         , borderBox
         , borderCollapse
@@ -21,7 +23,6 @@ import Css
         , px
         , solid
         , width
-        , backgroundColor
         )
 import Dict exposing (Dict)
 import Html.Styled as Html exposing (Html)
@@ -44,10 +45,6 @@ type alias Data a =
     { current : State
     , table : Dict State (List (Rule a))
     }
-
-
-type alias State =
-    Int
 
 
 type alias Rule a =
