@@ -1,5 +1,6 @@
-module Automaton exposing (Action, Automaton, Compass(..), Rule, Situation, Status(..), action, automaton, rule, step, view)
+module Automaton exposing (Action, Automaton, Rule, Situation, Status(..), action, automaton, rule, step, view)
 
+import Automaton.Compass as Compass exposing (Compass)
 import Automaton.State exposing (State)
 import Css
     exposing
@@ -76,13 +77,6 @@ type alias Action =
 action : State -> Compass -> Action
 action nextState direction =
     { nextState = nextState, direction = direction }
-
-
-type Compass
-    = North
-    | East
-    | South
-    | West
 
 
 type alias Situation =
@@ -234,18 +228,7 @@ viewAction aRule =
 
         direction : String
         direction =
-            case aRule.action.direction of
-                North ->
-                    "↑"
-
-                East ->
-                    "→"
-
-                South ->
-                    "↓"
-
-                West ->
-                    "←"
+            Compass.toString aRule.action.direction
     in
     Html.td [] [ Html.text <| next ++ direction ]
 

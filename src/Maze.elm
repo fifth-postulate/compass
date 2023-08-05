@@ -2,6 +2,7 @@ module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fr
 
 import Automaton exposing (Situation, Status(..))
 import Automaton.Compass exposing (Compass(..))
+import Automaton.Location as Location exposing (Location)
 import Dict exposing (Dict)
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute
@@ -25,7 +26,7 @@ type Maze
         { rows : Int
         , columns : Int
         , data : Dict Int (Dict Int Cell)
-        , machine : Maybe ( Int, Int )
+        , machine : Maybe Location
         }
 
 
@@ -99,14 +100,14 @@ fromDescription input =
                 _ ->
                     Empty
 
-        machine : List (List Cell) -> Maybe ( Int, Int )
+        machine : List (List Cell) -> Maybe Location
         machine raw =
             raw
                 |> List.indexedMap (\y row -> List.indexedMap (\x cell -> ( x, y, cell )) row)
                 |> List.concat
                 |> locate Machine
 
-        locate : Cell -> List ( Int, Int, Cell ) -> Maybe ( Int, Int )
+        locate : Cell -> List ( Int, Int, Cell ) -> Maybe Location
         locate target cells =
             case cells of
                 [] ->
@@ -246,15 +247,15 @@ errorToString error =
 situation : Maze -> Maybe Situation
 situation (Maze { machine, data }) =
     let
-        toSituation : ( Int, Int ) -> Situation
+        toSituation : Location -> Situation
         toSituation location =
-            { north = state <| lookup (go North location)
-            , east = state <| lookup (go East location)
-            , south = state <| lookup (go South location)
-            , west = state <| lookup (go West location)
+            { north = state <| lookup (Location.go North location)
+            , east = state <| lookup (Location.go East location)
+            , south = state <| lookup (Location.go South location)
+            , west = state <| lookup (Location.go West location)
             }
 
-        lookup : ( Int, Int ) -> Maybe Cell
+        lookup : Location -> Maybe Cell
         lookup ( x, y ) =
             data
                 |> Dict.get y
@@ -279,22 +280,6 @@ situation (Maze { machine, data }) =
         |> Maybe.map toSituation
 
 
-go : Compass -> ( Int, Int ) -> ( Int, Int )
-go direction ( x, y ) =
-    case direction of
-        North ->
-            ( x, y - 1 )
-
-        East ->
-            ( x + 1, y )
-
-        South ->
-            ( x, y + 1 )
-
-        West ->
-            ( x - 1, y )
-
-
 type Msg
     = Move Compass
 
@@ -304,10 +289,10 @@ update message (Maze ({ machine } as data)) =
     case message of
         Move direction ->
             let
-                nextMachine : Maybe ( Int, Int )
+                nextMachine : Maybe Location
                 nextMachine =
                     machine
-                        |> Maybe.map (go direction)
+                        |> Maybe.map (Location.go direction)
             in
             ( Maze { data | machine = nextMachine }, Cmd.none )
 
@@ -392,7 +377,7 @@ divided dividers configuration =
     }
 
 
-viewMachine : Divided Configuration -> Maybe ( Int, Int ) -> Svg msg
+viewMachine : Divided Configuration -> Maybe Location -> Svg msg
 viewMachine configuration location =
     let
         gridSize : Float
@@ -406,7 +391,7 @@ viewMachine configuration location =
                 |> Maybe.map (\c -> [ c ])
                 |> Maybe.withDefault []
 
-        toMachine : ( Int, Int ) -> Svg msg
+        toMachine : Location -> Svg msg
         toMachine ( x, y ) =
             Svg.circle
                 [ Attribute.cx <| String.fromFloat <| (*) gridSize <| (+) 0.5 <| toFloat x
