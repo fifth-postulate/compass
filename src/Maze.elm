@@ -1,6 +1,7 @@
 module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
 
-import Automaton exposing (Compass(..), Situation, Status(..))
+import Automaton exposing (Situation, Status(..))
+import Automaton.Compass exposing (Compass(..))
 import Dict exposing (Dict)
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute

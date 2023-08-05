@@ -1,6 +1,7 @@
 module Explore exposing (main)
 
-import Automaton exposing (Automaton, Compass(..), Rule, Situation, Status(..), action, automaton, rule)
+import Automaton exposing (Automaton, Rule, Situation, Status(..), action, automaton, rule)
+import Automaton.Compass exposing (Compass(..))
 import Browser
 import Css exposing (alignItems, center, displayFlex, flexDirection, flexStart, flexWrap, justifyContent, noWrap, row)
 import Dict exposing (Dict)
