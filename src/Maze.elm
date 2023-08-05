@@ -1,6 +1,6 @@
 module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
 
-import Automaton exposing (Situation, Status(..))
+import Automaton exposing (Situation, CellType(..))
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Location as Location exposing (Location)
 import Dict exposing (Dict)
@@ -261,13 +261,13 @@ situation (Maze { machine, data }) =
                 |> Dict.get y
                 |> Maybe.andThen (Dict.get x)
 
-        state : Maybe Cell -> Status
+        state : Maybe Cell -> CellType
         state cell =
             cell
                 |> Maybe.map cellToState
                 |> Maybe.withDefault Occupied
 
-        cellToState : Cell -> Status
+        cellToState : Cell -> CellType
         cellToState cell =
             case cell of
                 Empty ->

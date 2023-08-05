@@ -1,4 +1,4 @@
-module Automaton exposing (Action, Automaton, Rule, Situation, Status(..), action, automaton, rule, step, view)
+module Automaton exposing (Action, Automaton, Rule, Situation, CellType(..), action, automaton, rule, step, view)
 
 import Automaton.Compass as Compass exposing (Compass)
 import Automaton.State exposing (State)
@@ -50,20 +50,20 @@ type alias Data a =
 
 type alias Rule a =
     { a
-        | north : Status
-        , east : Status
-        , south : Status
-        , west : Status
+        | north : CellType
+        , east : CellType
+        , south : CellType
+        , west : CellType
         , action : Action
     }
 
 
-rule : Status -> Status -> Status -> Status -> Action -> Rule {}
+rule : CellType -> CellType -> CellType -> CellType -> Action -> Rule {}
 rule north east south west anAction =
     { north = north, east = east, south = south, west = west, action = anAction }
 
 
-type Status
+type CellType
     = Occupied
     | Free
 
@@ -80,10 +80,10 @@ action nextState direction =
 
 
 type alias Situation =
-    { north : Status
-    , east : Status
-    , south : Status
-    , west : Status
+    { north : CellType
+    , east : CellType
+    , south : CellType
+    , west : CellType
     }
 
 
@@ -166,7 +166,7 @@ viewTable current table =
 viewSituationHeader : Situation -> Html msg
 viewSituationHeader { north, east, south, west } =
     let
-        toWidth : Status -> Px
+        toWidth : CellType -> Px
         toWidth status =
             case status of
                 Free ->
@@ -236,7 +236,7 @@ viewAction aRule =
 situationFromInt : Int -> Situation
 situationFromInt n =
     let
-        toStatus : Int -> Status
+        toStatus : Int -> CellType
         toStatus d =
             case d of
                 0 ->
@@ -245,25 +245,25 @@ situationFromInt n =
                 _ ->
                     Occupied
 
-        north : Status
+        north : CellType
         north =
             n
                 |> modBy 2
                 |> toStatus
 
-        east : Status
+        east : CellType
         east =
             (n // 2)
                 |> modBy 2
                 |> toStatus
 
-        south : Status
+        south : CellType
         south =
             (n // 4)
                 |> modBy 2
                 |> toStatus
 
-        west : Status
+        west : CellType
         west =
             (n // 8)
                 |> modBy 2
