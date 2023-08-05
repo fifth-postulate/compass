@@ -4,10 +4,10 @@ import Automaton exposing (Automaton, automaton)
 import Automaton.Action exposing (action)
 import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass exposing (Compass(..))
-import Automaton.Rule exposing (Rule, rule)
+import Automaton.Program as Automat
+import Automaton.Rule exposing (rule)
 import Browser
 import Css exposing (alignItems, center, displayFlex, flexDirection, flexStart, flexWrap, justifyContent, noWrap, row)
-import Dict exposing (Dict)
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attribute
 import Html.Styled.Events as Event
@@ -80,57 +80,62 @@ init _ =
                 |> Result.map
                     (\m ->
                         let
-                            rules : Dict Int (List (Rule {}))
-                            rules =
-                                Dict.empty
-                                    |> Dict.insert 0
-                                        -- North
-                                        [ rule Free Occupied Free Free <| action 0 North
-                                        , rule Free Free Free Free <| action 1 East
-                                        , rule Occupied Occupied Free Free <| action 2 West
-                                        , rule Free Occupied Free Occupied <| action 0 North
-                                        , rule Occupied Occupied Free Occupied <| action 3 South
-                                        , rule Occupied Free Free Free <| action 1 East
-                                        , rule Occupied Free Free Occupied <| action 1 East
-                                        , rule Free Free Free Occupied <| action 1 East
-                                        ]
-                                    |> Dict.insert 1
-                                        -- East
-                                        [ rule Free Free Occupied Free <| action 1 East
-                                        , rule Free Free Free Free <| action 3 South
-                                        , rule Free Occupied Occupied Free <| action 0 North
-                                        , rule Occupied Free Occupied Free <| action 1 East
-                                        , rule Occupied Occupied Occupied Free <| action 2 West
-                                        , rule Free Occupied Free Free <| action 3 South
-                                        , rule Occupied Occupied Free Free <| action 3 South
-                                        , rule Occupied Free Free Free <| action 3 South
-                                        ]
-                                    |> Dict.insert 2
-                                        -- West
-                                        [ rule Occupied Free Free Free <| action 2 West
-                                        , rule Free Free Free Free <| action 0 North
-                                        , rule Occupied Free Free Occupied <| action 3 South
-                                        , rule Occupied Free Occupied Free <| action 2 West
-                                        , rule Occupied Free Occupied Occupied <| action 1 East
-                                        , rule Free Free Free Occupied <| action 0 North
-                                        , rule Free Free Occupied Occupied <| action 0 North
-                                        , rule Free Free Occupied Free <| action 0 North
-                                        ]
-                                    |> Dict.insert 3
-                                        -- South
-                                        [ rule Free Free Free Occupied <| action 3 South
-                                        , rule Free Free Free Free <| action 2 West
-                                        , rule Free Free Occupied Occupied <| action 1 East
-                                        , rule Free Occupied Free Occupied <| action 3 South
-                                        , rule Free Occupied Occupied Occupied <| action 0 North
-                                        , rule Free Free Occupied Free <| action 2 West
-                                        , rule Free Occupied Occupied Free <| action 2 West
-                                        , rule Free Occupied Free Free <| action 2 West
-                                        ]
+                            program : Automat.Program {}
+                            program =
+                                [ ( 0
+                                  , -- North
+                                    [ rule Free Occupied Free Free <| action 0 North
+                                    , rule Free Free Free Free <| action 1 East
+                                    , rule Occupied Occupied Free Free <| action 2 West
+                                    , rule Free Occupied Free Occupied <| action 0 North
+                                    , rule Occupied Occupied Free Occupied <| action 3 South
+                                    , rule Occupied Free Free Free <| action 1 East
+                                    , rule Occupied Free Free Occupied <| action 1 East
+                                    , rule Free Free Free Occupied <| action 1 East
+                                    ]
+                                  )
+                                , ( 1
+                                  , -- East
+                                    [ rule Free Free Occupied Free <| action 1 East
+                                    , rule Free Free Free Free <| action 3 South
+                                    , rule Free Occupied Occupied Free <| action 0 North
+                                    , rule Occupied Free Occupied Free <| action 1 East
+                                    , rule Occupied Occupied Occupied Free <| action 2 West
+                                    , rule Free Occupied Free Free <| action 3 South
+                                    , rule Occupied Occupied Free Free <| action 3 South
+                                    , rule Occupied Free Free Free <| action 3 South
+                                    ]
+                                  )
+                                , ( 2
+                                  , -- West
+                                    [ rule Occupied Free Free Free <| action 2 West
+                                    , rule Free Free Free Free <| action 0 North
+                                    , rule Occupied Free Free Occupied <| action 3 South
+                                    , rule Occupied Free Occupied Free <| action 2 West
+                                    , rule Occupied Free Occupied Occupied <| action 1 East
+                                    , rule Free Free Free Occupied <| action 0 North
+                                    , rule Free Free Occupied Occupied <| action 0 North
+                                    , rule Free Free Occupied Free <| action 0 North
+                                    ]
+                                  )
+                                , ( 3
+                                  , -- South
+                                    [ rule Free Free Free Occupied <| action 3 South
+                                    , rule Free Free Free Free <| action 2 West
+                                    , rule Free Free Occupied Occupied <| action 1 East
+                                    , rule Free Occupied Free Occupied <| action 3 South
+                                    , rule Free Occupied Occupied Occupied <| action 0 North
+                                    , rule Free Free Occupied Free <| action 2 West
+                                    , rule Free Occupied Occupied Free <| action 2 West
+                                    , rule Free Occupied Free Free <| action 2 West
+                                    ]
+                                  )
+                                ]
+                                    |> Automat.fromList
 
                             automat : Automaton {}
                             automat =
-                                automaton 0 rules
+                                automaton 0 program
                         in
                         { maze = m, automaton = automat, state = Pauzed }
                     )
