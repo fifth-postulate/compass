@@ -1,8 +1,8 @@
 module Explore exposing (main)
 
-import Automaton exposing (Automaton, Surrounding, automaton)
+import Automaton exposing (Automaton, automaton)
 import Automaton.Action exposing (action)
-import Automaton.Cell exposing (CellType(..))
+import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Rule exposing (Rule, rule)
 import Browser

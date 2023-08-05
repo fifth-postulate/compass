@@ -1,7 +1,7 @@
-module Automaton exposing (Automaton, Surrounding, automaton, step, view)
+module Automaton exposing (Automaton, automaton, step, view)
 
 import Automaton.Action exposing (Action)
-import Automaton.Cell exposing (CellType(..))
+import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass as Compass exposing (Compass)
 import Automaton.Rule exposing (Rule)
 import Automaton.State exposing (State)
@@ -48,14 +48,6 @@ type Automaton a
 type alias Data a =
     { current : State
     , table : Dict State (List (Rule a))
-    }
-
-
-type alias Surrounding =
-    { north : CellType
-    , east : CellType
-    , south : CellType
-    , west : CellType
     }
 
 

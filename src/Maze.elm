@@ -1,7 +1,6 @@
 module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
 
-import Automaton exposing (Surrounding)
-import Automaton.Cell exposing (CellType(..))
+import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Location as Location exposing (Location)
 import Dict exposing (Dict)
