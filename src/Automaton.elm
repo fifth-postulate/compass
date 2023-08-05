@@ -1,7 +1,9 @@
-module Automaton exposing (Action, Automaton, Rule, Situation, action, automaton, rule, step, view)
+module Automaton exposing (Automaton, Surrounding, automaton, step, view)
 
+import Automaton.Action exposing (Action)
 import Automaton.Cell exposing (CellType(..))
 import Automaton.Compass as Compass exposing (Compass)
+import Automaton.Rule exposing (Rule)
 import Automaton.State exposing (State)
 import Css
     exposing
@@ -49,33 +51,7 @@ type alias Data a =
     }
 
 
-type alias Rule a =
-    { a
-        | north : CellType
-        , east : CellType
-        , south : CellType
-        , west : CellType
-        , action : Action
-    }
-
-
-rule : CellType -> CellType -> CellType -> CellType -> Action -> Rule {}
-rule north east south west anAction =
-    { north = north, east = east, south = south, west = west, action = anAction }
-
-
-type alias Action =
-    { nextState : State
-    , heading : Compass
-    }
-
-
-action : State -> Compass -> Action
-action nextState heading =
-    { nextState = nextState, heading = heading }
-
-
-type alias Situation =
+type alias Surrounding =
     { north : CellType
     , east : CellType
     , south : CellType
@@ -83,35 +59,35 @@ type alias Situation =
     }
 
 
-step : Situation -> Automaton a -> Maybe ( Automaton a, Compass )
-step situation ((Automaton { current, table }) as automat) =
+step : Surrounding -> Automaton a -> Maybe ( Automaton a, Compass )
+step surrounding ((Automaton { current, table }) as automat) =
     table
         |> Dict.get current
-        |> Maybe.andThen (lookup situation)
+        |> Maybe.andThen (lookup surrounding)
         |> Maybe.map .action
         |> Maybe.map (flip apply <| automat)
 
 
-lookup : Situation -> List (Rule a) -> Maybe (Rule a)
-lookup situation rules =
+lookup : Surrounding -> List (Rule a) -> Maybe (Rule a)
+lookup surrounding rules =
     case rules of
         [] ->
             Nothing
 
         aRule :: tail ->
-            if match situation aRule then
+            if match surrounding aRule then
                 Just aRule
 
             else
-                lookup situation tail
+                lookup surrounding tail
 
 
-match : Situation -> Rule a -> Bool
-match situation aRule =
-    (situation.north == aRule.north)
-        && (situation.east == aRule.east)
-        && (situation.south == aRule.south)
-        && (situation.west == aRule.west)
+match : Surrounding -> Rule a -> Bool
+match surrounding aRule =
+    (surrounding.north == aRule.north)
+        && (surrounding.east == aRule.east)
+        && (surrounding.south == aRule.south)
+        && (surrounding.west == aRule.west)
 
 
 apply : Action -> Automaton a -> ( Automaton a, Compass )
@@ -144,23 +120,23 @@ viewTable current table =
                 |> List.map (\state -> ( state, Dict.get state table |> Maybe.withDefault [] ))
                 |> List.map (uncurry (viewState current))
 
-        situations : List (Html msg)
-        situations =
+        surrounding : List (Html msg)
+        surrounding =
             List.range 0 15
-                |> List.map situationFromInt
-                |> List.map viewSituationHeader
+                |> List.map surroundingFromInt
+                |> List.map viewSurroundingHeader
     in
     Html.table [ Attribute.css [ borderCollapse collapse ] ]
         [ Html.thead []
-            [ Html.tr [] <| Html.td [] [] :: situations
+            [ Html.tr [] <| Html.td [] [] :: surrounding
             ]
         , Html.tbody []
             rows
         ]
 
 
-viewSituationHeader : Situation -> Html msg
-viewSituationHeader { north, east, south, west } =
+viewSurroundingHeader : Surrounding -> Html msg
+viewSurroundingHeader { north, east, south, west } =
     let
         toWidth : CellType -> Px
         toWidth status =
@@ -193,11 +169,11 @@ viewSituationHeader { north, east, south, west } =
 viewState : State -> State -> List (Rule a) -> Html msg
 viewState current state rules =
     let
-        situations : List (Html msg)
-        situations =
+        surroundings : List (Html msg)
+        surroundings =
             List.range 0 15
-                |> List.map situationFromInt
-                |> List.map (\situation -> lookup situation rules)
+                |> List.map surroundingFromInt
+                |> List.map (\surrounding -> lookup surrounding rules)
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
 
@@ -211,7 +187,7 @@ viewState current state rules =
     in
     Html.tr [ Attribute.css <| bgc ] <|
         Html.td [] [ Html.text <| String.fromInt state ]
-            :: situations
+            :: surroundings
 
 
 viewAction : Rule a -> Html msg
@@ -229,8 +205,8 @@ viewAction aRule =
     Html.td [] [ Html.text <| next ++ heading ]
 
 
-situationFromInt : Int -> Situation
-situationFromInt n =
+surroundingFromInt : Int -> Surrounding
+surroundingFromInt n =
     let
         toStatus : Int -> CellType
         toStatus d =

@@ -1,8 +1,10 @@
 module Explore exposing (main)
 
-import Automaton exposing (Automaton, Rule, Situation, action, automaton, rule)
+import Automaton exposing (Automaton, Surrounding, automaton)
+import Automaton.Action exposing (action)
 import Automaton.Cell exposing (CellType(..))
 import Automaton.Compass exposing (Compass(..))
+import Automaton.Rule exposing (Rule, rule)
 import Browser
 import Css exposing (alignItems, center, displayFlex, flexDirection, flexStart, flexWrap, justifyContent, noWrap, row)
 import Dict exposing (Dict)
@@ -156,7 +158,7 @@ update message model =
 
         ( Step, Ok ({ maze, automaton } as data) ) ->
             let
-                situation : Maybe Situation
+                situation : Maybe Surrounding
                 situation =
                     Maze.situation maze
 

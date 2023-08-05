@@ -1,6 +1,6 @@
 module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
 
-import Automaton exposing (Situation)
+import Automaton exposing (Surrounding)
 import Automaton.Cell exposing (CellType(..))
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Location as Location exposing (Location)
@@ -245,10 +245,10 @@ errorToString error =
             "too many automata"
 
 
-situation : Maze -> Maybe Situation
+situation : Maze -> Maybe Surrounding
 situation (Maze { machine, data }) =
     let
-        toSituation : Location -> Situation
+        toSituation : Location -> Surrounding
         toSituation location =
             { north = state <| lookup (Location.go North location)
             , east = state <| lookup (Location.go East location)
