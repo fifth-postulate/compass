@@ -288,12 +288,12 @@ type Msg
 update : Msg -> Maze -> ( Maze, Cmd Msg )
 update message (Maze ({ machine } as data)) =
     case message of
-        Move direction ->
+        Move heading ->
             let
                 nextMachine : Maybe Location
                 nextMachine =
                     machine
-                        |> Maybe.map (Location.go direction)
+                        |> Maybe.map (Location.go heading)
             in
             ( Maze { data | machine = nextMachine }, Cmd.none )
 

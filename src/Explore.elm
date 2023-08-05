@@ -166,10 +166,10 @@ update message model =
                         |> Maybe.andThen (\s -> Automaton.step s automaton)
             in
             case nextStep of
-                Just ( nextAutomaton, direction ) ->
+                Just ( nextAutomaton, heading ) ->
                     let
                         ( nextMaze, cmd ) =
-                            Maze.update (Move direction) maze
+                            Maze.update (Move heading) maze
                     in
                     ( Ok { data | automaton = nextAutomaton, maze = nextMaze }, Cmd.map MazeMessage cmd )
 

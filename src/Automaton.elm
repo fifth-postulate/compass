@@ -66,13 +66,13 @@ rule north east south west anAction =
 
 type alias Action =
     { nextState : State
-    , direction : Compass
+    , heading : Compass
     }
 
 
 action : State -> Compass -> Action
-action nextState direction =
-    { nextState = nextState, direction = direction }
+action nextState heading =
+    { nextState = nextState, heading = heading }
 
 
 type alias Situation =
@@ -115,8 +115,8 @@ match situation aRule =
 
 
 apply : Action -> Automaton a -> ( Automaton a, Compass )
-apply { nextState, direction } (Automaton data) =
-    ( Automaton { data | current = nextState }, direction )
+apply { nextState, heading } (Automaton data) =
+    ( Automaton { data | current = nextState }, heading )
 
 
 flip : (a -> b -> c) -> b -> a -> c
@@ -222,11 +222,11 @@ viewAction aRule =
             aRule.action.nextState
                 |> String.fromInt
 
-        direction : String
-        direction =
-            Compass.toString aRule.action.direction
+        heading : String
+        heading =
+            Compass.toString aRule.action.heading
     in
-    Html.td [] [ Html.text <| next ++ direction ]
+    Html.td [] [ Html.text <| next ++ heading ]
 
 
 situationFromInt : Int -> Situation
