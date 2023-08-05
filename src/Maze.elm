@@ -1,6 +1,6 @@
 module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
 
-import Automaton.Cell exposing (CellType(..), Surrounding)
+import Automaton.Cell exposing (CellType(..), Surrounding, surrounding)
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Location as Location exposing (Location)
 import Dict exposing (Dict)
@@ -249,11 +249,11 @@ situation (Maze { machine, data }) =
     let
         toSituation : Location -> Surrounding
         toSituation location =
-            { north = state <| lookup (Location.go North location)
-            , east = state <| lookup (Location.go East location)
-            , south = state <| lookup (Location.go South location)
-            , west = state <| lookup (Location.go West location)
-            }
+            surrounding
+                (state <| lookup (Location.go North location))
+                (state <| lookup (Location.go East location))
+                (state <| lookup (Location.go South location))
+                (state <| lookup (Location.go West location))
 
         lookup : Location -> Maybe Cell
         lookup ( x, y ) =

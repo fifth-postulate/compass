@@ -1,4 +1,4 @@
-module Automaton exposing (Automaton, automaton, step, view)
+module Automaton exposing (Automaton, create, step, view)
 
 import Automaton.Action exposing (Action)
 import Automaton.Cell exposing (Surrounding)
@@ -9,8 +9,8 @@ import Automaton.State exposing (State)
 import Html.Styled exposing (Html)
 
 
-automaton : State -> Program a -> Automaton a
-automaton start program =
+create : State -> Program a -> Automaton a
+create start program =
     Automaton
         { currentState = start
         , program = program
@@ -18,13 +18,10 @@ automaton start program =
 
 
 type Automaton a
-    = Automaton (Data a)
-
-
-type alias Data a =
-    { currentState : State
-    , program : Program a
-    }
+    = Automaton
+        { currentState : State
+        , program : Program a
+        }
 
 
 step : Surrounding -> Automaton a -> Maybe ( Automaton a, Compass )
@@ -37,8 +34,8 @@ step surrounding ((Automaton { currentState, program }) as automat) =
 
 
 apply : Automaton a -> Action -> ( Automaton a, Compass )
-apply (Automaton data) { nextState, heading } =
-    ( Automaton { data | currentState = nextState }, heading )
+apply (Automaton automaton) { nextState, heading } =
+    ( Automaton { automaton | currentState = nextState }, heading )
 
 
 view : Automaton a -> Html msg

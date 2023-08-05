@@ -1,6 +1,6 @@
 module Explore exposing (main)
 
-import Automaton exposing (Automaton, automaton)
+import Automaton exposing (Automaton, create)
 import Automaton.Action exposing (action)
 import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass exposing (Compass(..))
@@ -135,7 +135,7 @@ init _ =
 
                             automat : Automaton {}
                             automat =
-                                automaton 0 program
+                                create 0 program
                         in
                         { maze = m, automaton = automat, state = Pauzed }
                     )

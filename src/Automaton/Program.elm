@@ -1,7 +1,7 @@
 module Automaton.Program exposing (Program, fromList, rules, view)
 
 import Automaton.Action exposing (Action)
-import Automaton.Cell exposing (CellType(..), Surrounding)
+import Automaton.Cell as Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass as Compass
 import Automaton.Rule as Rule exposing (Rule)
 import Automaton.State exposing (State)
@@ -65,7 +65,7 @@ view current (Program program) =
         surrounding : List (Html msg)
         surrounding =
             List.range 0 15
-                |> List.map surroundingFromInt
+                |> List.map Cell.surroundingFromInt
                 |> List.map viewSurroundingHeader
     in
     Html.table [ Attribute.css [ borderCollapse collapse ] ]
@@ -78,7 +78,7 @@ view current (Program program) =
 
 
 viewSurroundingHeader : Surrounding -> Html msg
-viewSurroundingHeader { north, east, south, west } =
+viewSurroundingHeader surrounding =
     let
         toWidth : CellType -> Px
         toWidth status =
@@ -98,10 +98,10 @@ viewSurroundingHeader { north, east, south, west } =
                 , boxSizing borderBox
                 , borderStyle solid
                 , borderColor <| hex "000000"
-                , borderTopWidth <| toWidth north
-                , borderRightWidth <| toWidth east
-                , borderBottomWidth <| toWidth south
-                , borderLeftWidth <| toWidth west
+                , borderTopWidth <| toWidth <| Cell.north surrounding
+                , borderRightWidth <| toWidth <| Cell.east surrounding
+                , borderBottomWidth <| toWidth <| Cell.south surrounding
+                , borderLeftWidth <| toWidth <| Cell.west surrounding
                 ]
             ]
             []
@@ -114,7 +114,7 @@ viewState current state someRules =
         surroundings : List (Html msg)
         surroundings =
             List.range 0 15
-                |> List.map surroundingFromInt
+                |> List.map Cell.surroundingFromInt
                 |> List.map (flip Rule.lookup someRules)
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
@@ -155,45 +155,6 @@ viewAction aRule =
             Compass.toString action.heading
     in
     Html.td [] [ Html.text <| next ++ heading ]
-
-
-surroundingFromInt : Int -> Surrounding
-surroundingFromInt n =
-    let
-        toStatus : Int -> CellType
-        toStatus d =
-            case d of
-                0 ->
-                    Free
-
-                _ ->
-                    Occupied
-
-        north : CellType
-        north =
-            n
-                |> modBy 2
-                |> toStatus
-
-        east : CellType
-        east =
-            (n // 2)
-                |> modBy 2
-                |> toStatus
-
-        south : CellType
-        south =
-            (n // 4)
-                |> modBy 2
-                |> toStatus
-
-        west : CellType
-        west =
-            (n // 8)
-                |> modBy 2
-                |> toStatus
-    in
-    { north = north, east = east, south = south, west = west }
 
 
 uncurry : (a -> b -> c) -> ( a, b ) -> c
