@@ -163,14 +163,19 @@ flip f b a =
 viewAction : Rule a -> Html msg
 viewAction aRule =
     let
+        action : Action
+        action =
+            Rule.action aRule
+
         next : String
         next =
-            aRule.action.nextState
+            action
+                |> .nextState
                 |> String.fromInt
 
         heading : String
         heading =
-            Compass.toString aRule.action.heading
+            Compass.toString action.heading
     in
     Html.td [] [ Html.text <| next ++ heading ]
 
