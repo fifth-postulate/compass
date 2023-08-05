@@ -3,7 +3,7 @@ module Automaton exposing (Automaton, automaton, step, view)
 import Automaton.Action exposing (Action)
 import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass as Compass exposing (Compass)
-import Automaton.Rule exposing (Rule)
+import Automaton.Rule as Rule exposing (Rule)
 import Automaton.State exposing (State)
 import Css
     exposing
@@ -55,31 +55,9 @@ step : Surrounding -> Automaton a -> Maybe ( Automaton a, Compass )
 step surrounding ((Automaton { current, table }) as automat) =
     table
         |> Dict.get current
-        |> Maybe.andThen (lookup surrounding)
+        |> Maybe.andThen (Rule.lookup surrounding)
         |> Maybe.map .action
         |> Maybe.map (flip apply <| automat)
-
-
-lookup : Surrounding -> List (Rule a) -> Maybe (Rule a)
-lookup surrounding rules =
-    case rules of
-        [] ->
-            Nothing
-
-        aRule :: tail ->
-            if match surrounding aRule then
-                Just aRule
-
-            else
-                lookup surrounding tail
-
-
-match : Surrounding -> Rule a -> Bool
-match surrounding aRule =
-    (surrounding.north == aRule.north)
-        && (surrounding.east == aRule.east)
-        && (surrounding.south == aRule.south)
-        && (surrounding.west == aRule.west)
 
 
 apply : Action -> Automaton a -> ( Automaton a, Compass )
@@ -165,7 +143,7 @@ viewState current state rules =
         surroundings =
             List.range 0 15
                 |> List.map surroundingFromInt
-                |> List.map (\surrounding -> lookup surrounding rules)
+                |> List.map (\surrounding -> Rule.lookup surrounding rules)
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
 
