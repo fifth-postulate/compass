@@ -33,21 +33,21 @@ import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attribute
 
 
-type Program a
-    = Program (Dict State (List (Rule a)))
+type Program
+    = Program (Dict State (List Rule))
 
 
-fromList : List ( State, List (Rule a) ) -> Program a
+fromList : List ( State, List Rule ) -> Program
 fromList =
     Dict.fromList >> Program
 
 
-rules : State -> Program a -> Maybe (List (Rule a))
+rules : State -> Program -> Maybe (List Rule)
 rules state (Program program) =
     Dict.get state program
 
 
-view : State -> Program a -> Html msg
+view : State -> Program -> Html msg
 view current (Program program) =
     let
         states : List State
@@ -108,7 +108,7 @@ viewSurroundingHeader surrounding =
         ]
 
 
-viewState : State -> State -> List (Rule a) -> Html msg
+viewState : State -> State -> List Rule -> Html msg
 viewState current state someRules =
     let
         surroundings : List (Html msg)
@@ -137,7 +137,7 @@ flip f b a =
     f a b
 
 
-viewAction : Rule a -> Html msg
+viewAction : Rule -> Html msg
 viewAction aRule =
     let
         action : Action

@@ -4,23 +4,22 @@ import Automaton.Action exposing (Action)
 import Automaton.Cell as Cell exposing (CellType, Surrounding)
 
 
-type Rule a
+type Rule
     = Rule
-        { a
-            | north : CellType
-            , east : CellType
-            , south : CellType
-            , west : CellType
-            , action : Action
+        { north : CellType
+        , east : CellType
+        , south : CellType
+        , west : CellType
+        , action : Action
         }
 
 
-rule : CellType -> CellType -> CellType -> CellType -> Action -> Rule {}
+rule : CellType -> CellType -> CellType -> CellType -> Action -> Rule
 rule north east south west anAction =
     Rule { north = north, east = east, south = south, west = west, action = anAction }
 
 
-lookup : Surrounding -> List (Rule a) -> Maybe (Rule a)
+lookup : Surrounding -> List Rule -> Maybe Rule
 lookup surrounding rules =
     case rules of
         [] ->
@@ -34,7 +33,7 @@ lookup surrounding rules =
                 lookup surrounding tail
 
 
-match : Surrounding -> Rule a -> Bool
+match : Surrounding -> Rule -> Bool
 match surrounding (Rule aRule) =
     (Cell.north surrounding == aRule.north)
         && (Cell.east surrounding == aRule.east)
@@ -42,6 +41,6 @@ match surrounding (Rule aRule) =
         && (Cell.west surrounding == aRule.west)
 
 
-action : Rule a -> Action
+action : Rule -> Action
 action (Rule aRule) =
     aRule.action

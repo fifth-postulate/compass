@@ -9,7 +9,7 @@ import Automaton.State exposing (State)
 import Html.Styled exposing (Html)
 
 
-create : State -> Program a -> Automaton a
+create : State -> Program -> Automaton
 create start program =
     Automaton
         { currentState = start
@@ -17,14 +17,14 @@ create start program =
         }
 
 
-type Automaton a
+type Automaton
     = Automaton
         { currentState : State
-        , program : Program a
+        , program : Program
         }
 
 
-step : Surrounding -> Automaton a -> Maybe ( Automaton a, Compass )
+step : Surrounding -> Automaton -> Maybe ( Automaton, Compass )
 step surrounding ((Automaton { currentState, program }) as automat) =
     program
         |> Program.rules currentState
@@ -33,11 +33,11 @@ step surrounding ((Automaton { currentState, program }) as automat) =
         |> Maybe.map (apply automat)
 
 
-apply : Automaton a -> Action -> ( Automaton a, Compass )
+apply : Automaton -> Action -> ( Automaton, Compass )
 apply (Automaton automaton) { nextState, heading } =
     ( Automaton { automaton | currentState = nextState }, heading )
 
 
-view : Automaton a -> Html msg
+view : Automaton -> Html msg
 view (Automaton { currentState, program }) =
     Program.view currentState program

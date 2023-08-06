@@ -15,7 +15,7 @@ import Maze exposing (Configuration, Error, Maze, Msg(..))
 import Time exposing (every)
 
 
-main : Program () (Model {}) Msg
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
@@ -27,13 +27,13 @@ main =
         }
 
 
-type alias Model a =
-    Result Error (Data a)
+type alias Model =
+    Result Error Data
 
 
-type alias Data a =
+type alias Data =
     { maze : Maze
-    , automaton : Automaton a
+    , automaton : Automaton
     , state : RunState
     }
 
@@ -65,7 +65,7 @@ mazeDescription =
         |> String.join "\n"
 
 
-init : () -> ( Model {}, Cmd Msg )
+init : () -> ( Model, Cmd Msg )
 init _ =
     let
         aMaze : Result Error Maze
@@ -74,13 +74,13 @@ init _ =
                 |> Maze.fromDescription
                 |> Result.mapError MazeError
 
-        model : Model {}
+        model : Model
         model =
             aMaze
                 |> Result.map
                     (\m ->
                         let
-                            program : Automat.Program {}
+                            program : Automat.Program
                             program =
                                 [ ( 0
                                   , -- North
@@ -133,7 +133,7 @@ init _ =
                                 ]
                                     |> Automat.fromList
 
-                            automat : Automaton {}
+                            automat : Automaton
                             automat =
                                 create 0 program
                         in
@@ -151,7 +151,7 @@ type Msg
     | Run
 
 
-update : Msg -> Model a -> ( Model a, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case ( message, model ) of
         ( MazeMessage msg, Ok data ) ->
@@ -167,7 +167,7 @@ update message model =
                 situation =
                     Maze.situation maze
 
-                nextStep : Maybe ( Automaton a, Compass )
+                nextStep : Maybe ( Automaton, Compass )
                 nextStep =
                     situation
                         |> Maybe.andThen (\s -> Automaton.step s automaton)
@@ -201,7 +201,7 @@ update message model =
             ( model, Cmd.none )
 
 
-updateMaze : Maze.Msg -> Data a -> ( Data a, Cmd Maze.Msg )
+updateMaze : Maze.Msg -> Data -> ( Data, Cmd Maze.Msg )
 updateMaze msg ({ maze } as data) =
     let
         ( nextMaze, cmd ) =
@@ -210,7 +210,7 @@ updateMaze msg ({ maze } as data) =
     ( { data | maze = nextMaze }, cmd )
 
 
-view : Configuration -> Model a -> Html Msg
+view : Configuration -> Model -> Html Msg
 view configuration model =
     Html.div []
         [ viewControls
@@ -245,7 +245,7 @@ viewControls =
         ]
 
 
-viewMaze : Configuration -> Model a -> Html Msg
+viewMaze : Configuration -> Model -> Html Msg
 viewMaze configuration model =
     model
         |> Result.map .maze
@@ -265,7 +265,7 @@ withDefault transform result =
             transform e
 
 
-viewAutomaton : Model a -> Html Msg
+viewAutomaton : Model -> Html Msg
 viewAutomaton model =
     model
         |> Result.map .automaton
@@ -293,6 +293,6 @@ empty _ =
     Html.div [] []
 
 
-subscriptions : Model a -> Sub Msg
+subscriptions : Model -> Sub Msg
 subscriptions _ =
     every 250 (\_ -> Tick)
