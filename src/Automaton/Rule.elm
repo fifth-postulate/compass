@@ -1,22 +1,19 @@
 module Automaton.Rule exposing (Rule, action, lookup, rule)
 
 import Automaton.Action exposing (Action)
-import Automaton.Cell as Cell exposing (CellType, Surrounding)
+import Automaton.Cell exposing (CellType, Surrounding, surrounding)
 
 
 type Rule
     = Rule
-        { north : CellType
-        , east : CellType
-        , south : CellType
-        , west : CellType
+        { prerequisite : Surrounding
         , action : Action
         }
 
 
 rule : CellType -> CellType -> CellType -> CellType -> Action -> Rule
 rule north east south west anAction =
-    Rule { north = north, east = east, south = south, west = west, action = anAction }
+    Rule { prerequisite = surrounding north east south west, action = anAction }
 
 
 lookup : Surrounding -> List Rule -> Maybe Rule
@@ -35,10 +32,7 @@ lookup surrounding rules =
 
 match : Surrounding -> Rule -> Bool
 match surrounding (Rule aRule) =
-    (Cell.north surrounding == aRule.north)
-        && (Cell.east surrounding == aRule.east)
-        && (Cell.south surrounding == aRule.south)
-        && (Cell.west surrounding == aRule.west)
+    surrounding == aRule.prerequisite
 
 
 action : Rule -> Action
