@@ -1,6 +1,6 @@
 module Automaton exposing (Automaton, create, step, view)
 
-import Automaton.Action exposing (Action)
+import Automaton.Action as Action exposing (Action)
 import Automaton.Compass exposing (Compass)
 import Automaton.Program as Program exposing (Program)
 import Automaton.Rule as Rule
@@ -34,8 +34,8 @@ step surrounding ((Automaton { currentState, program }) as automat) =
 
 
 apply : Automaton -> Action -> ( Automaton, Compass )
-apply (Automaton automaton) { nextState, heading } =
-    ( Automaton { automaton | currentState = nextState }, heading )
+apply (Automaton automaton) action =
+    ( Automaton { automaton | currentState = Action.nextState action }, Action.heading action )
 
 
 view : Automaton -> Html msg

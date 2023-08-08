@@ -1,6 +1,6 @@
 module Automaton.Program exposing (Program, fromList, rules, view)
 
-import Automaton.Action exposing (Action)
+import Automaton.Action as Action exposing (Action)
 import Automaton.Compass as Compass
 import Automaton.Rule as Rule exposing (Rule)
 import Automaton.State exposing (State)
@@ -147,12 +147,12 @@ viewAction aRule =
         next : String
         next =
             action
-                |> .nextState
+                |> Action.nextState
                 |> String.fromInt
 
         heading : String
         heading =
-            Compass.toString action.heading
+            Compass.toString <| Action.heading action
     in
     Html.td [] [ Html.text <| next ++ heading ]
 
