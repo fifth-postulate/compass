@@ -27,7 +27,7 @@ type Maze
     = Maze
         { rows : Int
         , columns : Int
-        , data : Dict Int (Dict Int Cell)
+        , cells : Dict Location Cell
         , machine : Maybe Location
         }
 
@@ -63,25 +63,24 @@ fromDescription input =
                 |> List.map List.length
                 |> List.foldl max 0
 
-        data : List (List Cell) -> Dict Int (Dict Int Cell)
-        data raw =
+        cells : List (List Cell) -> Dict Location Cell
+        cells raw =
             raw
-                |> List.indexedMap (\y row -> ( y, toData row ))
-                |> Dict.fromList
-
-        toData : List Cell -> Dict Int Cell
-        toData row =
-            row
                 |> List.indexedMap
-                    (\x cell ->
-                        ( x
-                        , if Cell.isBarrier cell then
-                            Barrier
+                    (\y row ->
+                        List.indexedMap
+                            (\x cell ->
+                                ( ( x, y )
+                                , if Cell.isBarrier cell then
+                                    Barrier
 
-                          else
-                            Empty
-                        )
+                                  else
+                                    Empty
+                                )
+                            )
+                            row
                     )
+                |> List.concat
                 |> Dict.fromList
 
         machine : List (List Cell) -> Maybe Location
@@ -92,8 +91,8 @@ fromDescription input =
                 |> locateMachine
 
         locateMachine : List ( Int, Int, Cell ) -> Maybe Location
-        locateMachine cells =
-            case cells of
+        locateMachine cs =
+            case cs of
                 [] ->
                     Nothing
 
@@ -105,7 +104,7 @@ fromDescription input =
                         locateMachine tails
     in
     checkedInput
-        |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, data = data raw, machine = machine raw })
+        |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, machine = machine raw, cells = cells raw })
 
 
 containsOnly : List Char -> Specification Error String
@@ -210,7 +209,7 @@ errorToString error =
 
 
 situation : Maze -> Maybe Surrounding
-situation (Maze { machine, data }) =
+situation (Maze { machine, cells }) =
     let
         toSituation : Location -> Surrounding
         toSituation location =
@@ -221,10 +220,8 @@ situation (Maze { machine, data }) =
                 (state <| lookup (Location.go West location))
 
         lookup : Location -> Maybe Cell
-        lookup ( x, y ) =
-            data
-                |> Dict.get y
-                |> Maybe.andThen (Dict.get x)
+        lookup location =
+            Dict.get location cells
 
         state : Maybe Cell -> CellType
         state cell =
@@ -241,7 +238,7 @@ type Msg
 
 
 update : Msg -> Maze -> ( Maze, Cmd Msg )
-update message (Maze ({ machine } as data)) =
+update message (Maze ({ machine } as maze)) =
     case message of
         Move heading ->
             let
@@ -250,7 +247,7 @@ update message (Maze ({ machine } as data)) =
                     machine
                         |> Maybe.map (Location.go heading)
             in
-            ( Maze { data | machine = nextMachine }, Cmd.none )
+            ( Maze { maze | machine = nextMachine }, Cmd.none )
 
 
 view : Configuration -> Maze -> Svg msg
@@ -273,31 +270,15 @@ view configuration ((Maze { rows, columns, machine }) as aMaze) =
 
 
 viewMaze : Divided Configuration -> Maze -> Svg msg
-viewMaze configuration (Maze { rows, columns, data }) =
-    let
-        dr : Int
-        dr =
-            (configuration.dividers - rows) // 2
-
-        dc : Int
-        dc =
-            (configuration.dividers - columns) // 2
-
-        toData : Int -> Dict Int Cell -> List ( Int, Int, Cell )
-        toData y d =
-            d
-                |> Dict.toList
-                |> List.map (\( x, cell ) -> ( x + dr, y + dc, cell ))
-    in
-    data
+viewMaze configuration (Maze { cells }) =
+    cells
         |> Dict.toList
-        |> List.concatMap (\( y, d ) -> toData y d)
         |> List.map (viewCell configuration)
         |> Svg.g []
 
 
-viewCell : Divided Configuration -> ( Int, Int, Cell ) -> Svg msg
-viewCell configuration ( column, row, content ) =
+viewCell : Divided Configuration -> ( Location, Cell ) -> Svg msg
+viewCell configuration ( ( column, row ), content ) =
     let
         gridSize : Float
         gridSize =
