@@ -1,11 +1,11 @@
 module Automaton exposing (Automaton, create, step, view)
 
 import Automaton.Action exposing (Action)
-import Automaton.Cell exposing (Surrounding)
 import Automaton.Compass exposing (Compass)
 import Automaton.Program as Program exposing (Program)
 import Automaton.Rule as Rule
 import Automaton.State exposing (State)
+import Automaton.Surrounding exposing (Surrounding)
 import Html.Styled exposing (Html)
 
 

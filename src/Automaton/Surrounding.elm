@@ -1,4 +1,4 @@
-module Automaton.Cell exposing (CellType(..), Surrounding, east, north, south, surrounding, surroundingFromInt, west)
+module Automaton.Surrounding exposing (CellType(..), Surrounding, east, fromInt, north, south, surrounding, west)
 
 
 type Surrounding
@@ -25,8 +25,8 @@ surrounding n e s w =
         }
 
 
-surroundingFromInt : Int -> Surrounding
-surroundingFromInt m =
+fromInt : Int -> Surrounding
+fromInt m =
     let
         toStatus : Int -> CellType
         toStatus d =

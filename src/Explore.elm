@@ -2,10 +2,10 @@ module Explore exposing (main)
 
 import Automaton exposing (Automaton, create)
 import Automaton.Action exposing (action)
-import Automaton.Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Program as Automat
 import Automaton.Rule exposing (rule)
+import Automaton.Surrounding exposing (CellType(..), Surrounding)
 import Browser
 import Css exposing (alignItems, center, displayFlex, flexDirection, flexStart, flexWrap, justifyContent, noWrap, row)
 import Html.Styled as Html exposing (Html)

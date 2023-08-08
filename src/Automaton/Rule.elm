@@ -1,7 +1,7 @@
 module Automaton.Rule exposing (Rule, action, lookup, rule)
 
 import Automaton.Action exposing (Action)
-import Automaton.Cell exposing (CellType, Surrounding, surrounding)
+import Automaton.Surrounding exposing (CellType, Surrounding, surrounding)
 
 
 type Rule

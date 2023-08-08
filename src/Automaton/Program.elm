@@ -1,10 +1,10 @@
 module Automaton.Program exposing (Program, fromList, rules, view)
 
 import Automaton.Action exposing (Action)
-import Automaton.Cell as Cell exposing (CellType(..), Surrounding)
 import Automaton.Compass as Compass
 import Automaton.Rule as Rule exposing (Rule)
 import Automaton.State exposing (State)
+import Automaton.Surrounding as Surrounding exposing (CellType(..), Surrounding)
 import Css
     exposing
         ( Px
@@ -65,7 +65,7 @@ view current (Program program) =
         surrounding : List (Html msg)
         surrounding =
             List.range 0 15
-                |> List.map Cell.surroundingFromInt
+                |> List.map Surrounding.fromInt
                 |> List.map viewSurroundingHeader
     in
     Html.table [ Attribute.css [ borderCollapse collapse ] ]
@@ -98,10 +98,10 @@ viewSurroundingHeader surrounding =
                 , boxSizing borderBox
                 , borderStyle solid
                 , borderColor <| hex "000000"
-                , borderTopWidth <| toWidth <| Cell.north surrounding
-                , borderRightWidth <| toWidth <| Cell.east surrounding
-                , borderBottomWidth <| toWidth <| Cell.south surrounding
-                , borderLeftWidth <| toWidth <| Cell.west surrounding
+                , borderTopWidth <| toWidth <| Surrounding.north surrounding
+                , borderRightWidth <| toWidth <| Surrounding.east surrounding
+                , borderBottomWidth <| toWidth <| Surrounding.south surrounding
+                , borderLeftWidth <| toWidth <| Surrounding.west surrounding
                 ]
             ]
             []
@@ -114,7 +114,7 @@ viewState current state someRules =
         surroundings : List (Html msg)
         surroundings =
             List.range 0 15
-                |> List.map Cell.surroundingFromInt
+                |> List.map Surrounding.fromInt
                 |> List.map (flip Rule.lookup someRules)
                 |> List.map (Maybe.map viewAction)
                 |> List.map (Maybe.withDefault <| Html.td [] [])
