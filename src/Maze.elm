@@ -4,6 +4,7 @@ import Automaton.Compass exposing (Compass(..))
 import Automaton.Location as Location exposing (Location)
 import Automaton.Surrounding exposing (CellType(..), Surrounding, surrounding)
 import Dict exposing (Dict)
+import Maze.Cell as Cell exposing (Cell(..))
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute
 
@@ -30,12 +31,6 @@ type Maze
         }
 
 
-type Cell
-    = Barrier
-    | Machine
-    | Empty
-
-
 fromDescription : String -> Result Error Maze
 fromDescription input =
     let
@@ -54,19 +49,7 @@ fromDescription input =
         toColumns aRow =
             aRow
                 |> String.split ""
-                |> List.map toCell
-
-        toCell : String -> Cell
-        toCell cell =
-            case cell of
-                "." ->
-                    Empty
-
-                "@" ->
-                    Machine
-
-                _ ->
-                    Barrier
+                |> List.map Cell.fromString
 
         rows : List (List Cell) -> Int
         rows raw =
@@ -88,37 +71,37 @@ fromDescription input =
         toData : List Cell -> Dict Int Cell
         toData row =
             row
-                |> List.indexedMap (\x cell -> ( x, occupied cell ))
+                |> List.indexedMap
+                    (\x cell ->
+                        ( x
+                        , if Cell.isBarrier cell then
+                            Barrier
+
+                          else
+                            Empty
+                        )
+                    )
                 |> Dict.fromList
-
-        occupied : Cell -> Cell
-        occupied cell =
-            case cell of
-                Barrier ->
-                    Barrier
-
-                _ ->
-                    Empty
 
         machine : List (List Cell) -> Maybe Location
         machine raw =
             raw
                 |> List.indexedMap (\y row -> List.indexedMap (\x cell -> ( x, y, cell )) row)
                 |> List.concat
-                |> locate Machine
+                |> locateMachine
 
-        locate : Cell -> List ( Int, Int, Cell ) -> Maybe Location
-        locate target cells =
+        locateMachine : List ( Int, Int, Cell ) -> Maybe Location
+        locateMachine cells =
             case cells of
                 [] ->
                     Nothing
 
                 ( x, y, candidate ) :: tails ->
-                    if candidate == target then
+                    if Cell.isMachine candidate then
                         Just ( x, y )
 
                     else
-                        locate target tails
+                        locateMachine tails
     in
     checkedInput
         |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, data = data raw, machine = machine raw })
@@ -210,7 +193,7 @@ oneAutomata =
             1
                 >= (result
                         |> List.concat
-                        |> List.filter ((==) Machine)
+                        |> List.filter Cell.isMachine
                         |> List.length
                    )
     in
@@ -264,17 +247,8 @@ situation (Maze { machine, data }) =
         state : Maybe Cell -> CellType
         state cell =
             cell
-                |> Maybe.map cellToState
+                |> Maybe.map Cell.toCellType
                 |> Maybe.withDefault Occupied
-
-        cellToState : Cell -> CellType
-        cellToState cell =
-            case cell of
-                Empty ->
-                    Free
-
-                _ ->
-                    Occupied
     in
     machine
         |> Maybe.map toSituation
@@ -349,12 +323,11 @@ viewCell configuration ( column, row, content ) =
 
         color : String
         color =
-            case content of
-                Empty ->
-                    configuration.cellColor
+            if Cell.isEmpty content then
+                configuration.cellColor
 
-                _ ->
-                    configuration.barrierColor
+            else
+                configuration.barrierColor
     in
     Svg.rect
         [ Attribute.x <| String.fromFloat <| (*) gridSize <| toFloat <| column
