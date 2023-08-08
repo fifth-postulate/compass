@@ -1,4 +1,26 @@
-module Automaton.Surrounding exposing (CellType(..), Surrounding, east, fromInt, north, south, surrounding, west)
+module Automaton.Surrounding exposing (CellType(..), Surrounding, fromInt, surrounding, view)
+
+import Css
+    exposing
+        ( Px
+        , borderBottomWidth
+        , borderBox
+        , borderColor
+        , borderLeftWidth
+        , borderRightWidth
+        , borderStyle
+        , borderTopWidth
+        , boxSizing
+        , display
+        , height
+        , hex
+        , inlineBlock
+        , px
+        , solid
+        , width
+        )
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes as Attribute
 
 
 type Surrounding
@@ -16,12 +38,12 @@ type CellType
 
 
 surrounding : CellType -> CellType -> CellType -> CellType -> Surrounding
-surrounding n e s w =
+surrounding north east south west =
     Surrounding
-        { north = n
-        , east = e
-        , south = s
-        , west = w
+        { north = north
+        , east = east
+        , south = south
+        , west = west
         }
 
 
@@ -37,48 +59,57 @@ fromInt m =
                 _ ->
                     Occupied
 
-        n : CellType
-        n =
+        north : CellType
+        north =
             m
                 |> modBy 2
                 |> toStatus
 
-        e : CellType
-        e =
+        east : CellType
+        east =
             (m // 2)
                 |> modBy 2
                 |> toStatus
 
-        s : CellType
-        s =
+        south : CellType
+        south =
             (m // 4)
                 |> modBy 2
                 |> toStatus
 
-        w : CellType
-        w =
+        west : CellType
+        west =
             (m // 8)
                 |> modBy 2
                 |> toStatus
     in
-    surrounding n e s w
+    surrounding north east south west
 
 
-north : Surrounding -> CellType
-north (Surrounding s) =
-    s.north
+view : Surrounding -> Html msg
+view (Surrounding s) =
+    let
+        toWidth : CellType -> Px
+        toWidth status =
+            case status of
+                Free ->
+                    px 1
 
-
-east : Surrounding -> CellType
-east (Surrounding s) =
-    s.east
-
-
-south : Surrounding -> CellType
-south (Surrounding s) =
-    s.south
-
-
-west : Surrounding -> CellType
-west (Surrounding s) =
-    s.west
+                Occupied ->
+                    px 3
+    in
+    Html.span
+        [ Attribute.css
+            [ display inlineBlock
+            , width <| px 15
+            , height <| px 15
+            , boxSizing borderBox
+            , borderStyle solid
+            , borderColor <| hex "000000"
+            , borderTopWidth <| toWidth <| s.north
+            , borderRightWidth <| toWidth <| s.east
+            , borderBottomWidth <| toWidth <| s.south
+            , borderLeftWidth <| toWidth <| s.west
+            ]
+        ]
+        []

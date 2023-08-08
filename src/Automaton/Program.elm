@@ -4,29 +4,14 @@ import Automaton.Action as Action exposing (Action)
 import Automaton.Compass as Compass
 import Automaton.Rule as Rule exposing (Rule)
 import Automaton.State exposing (State)
-import Automaton.Surrounding as Surrounding exposing (CellType(..), Surrounding)
+import Automaton.Surrounding as Surrounding exposing (Surrounding)
 import Css
     exposing
-        ( Px
-        , Style
+        ( Style
         , backgroundColor
-        , borderBottomWidth
-        , borderBox
         , borderCollapse
-        , borderColor
-        , borderLeftWidth
-        , borderRightWidth
-        , borderStyle
-        , borderTopWidth
-        , boxSizing
         , collapse
-        , display
-        , height
         , hex
-        , inlineBlock
-        , px
-        , solid
-        , width
         )
 import Dict exposing (Dict)
 import Html.Styled as Html exposing (Html)
@@ -79,33 +64,8 @@ view current (Program program) =
 
 viewSurroundingHeader : Surrounding -> Html msg
 viewSurroundingHeader surrounding =
-    let
-        toWidth : CellType -> Px
-        toWidth status =
-            case status of
-                Free ->
-                    px 1
-
-                Occupied ->
-                    px 3
-    in
     Html.td []
-        [ Html.span
-            [ Attribute.css
-                [ display inlineBlock
-                , width <| px 15
-                , height <| px 15
-                , boxSizing borderBox
-                , borderStyle solid
-                , borderColor <| hex "000000"
-                , borderTopWidth <| toWidth <| Surrounding.north surrounding
-                , borderRightWidth <| toWidth <| Surrounding.east surrounding
-                , borderBottomWidth <| toWidth <| Surrounding.south surrounding
-                , borderLeftWidth <| toWidth <| Surrounding.west surrounding
-                ]
-            ]
-            []
-        ]
+        [ Surrounding.view surrounding ]
 
 
 viewState : State -> State -> List Rule -> Html msg
