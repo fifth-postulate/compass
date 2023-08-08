@@ -5,6 +5,7 @@ import Automaton.Location as Location exposing (Location)
 import Automaton.Surrounding exposing (CellType(..), Surrounding, surrounding)
 import Dict exposing (Dict)
 import Maze.Cell as Cell exposing (Cell(..))
+import Specification exposing (Specification, fromPredicate)
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute
 
@@ -107,25 +108,6 @@ fromDescription input =
         |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, data = data raw, machine = machine raw })
 
 
-type alias Specification e a =
-    Result e a -> Result e a
-
-
-toSpecification : e -> (a -> Bool) -> Specification e a
-toSpecification error predicate source =
-    let
-        fromPredicate : a -> Result e a
-        fromPredicate a =
-            if predicate a then
-                Ok a
-
-            else
-                Err error
-    in
-    source
-        |> Result.andThen fromPredicate
-
-
 containsOnly : List Char -> Specification Error String
 containsOnly allowedCharacters =
     let
@@ -134,12 +116,12 @@ containsOnly allowedCharacters =
             input
                 |> String.all (\character -> List.member character allowedCharacters)
     in
-    toSpecification UnknownCharacter predicate
+    fromPredicate UnknownCharacter predicate
 
 
 enoughRows : Specification Error (List String)
 enoughRows =
-    toSpecification TooFewRows (\rows -> 3 <= List.length rows)
+    fromPredicate TooFewRows (\rows -> 3 <= List.length rows)
 
 
 columnsAgree : Specification Error (List (List Cell))
@@ -167,7 +149,7 @@ columnsAgree =
             in
             minimum == maximum
     in
-    toSpecification ColumnsDoNotAgree inAgreement
+    fromPredicate ColumnsDoNotAgree inAgreement
 
 
 enoughColumns : Specification Error (List (List Cell))
@@ -182,7 +164,7 @@ enoughColumns =
                         |> Maybe.withDefault 0
                    )
     in
-    toSpecification TooFewColumns atLeast3
+    fromPredicate TooFewColumns atLeast3
 
 
 oneAutomata : Specification Error (List (List Cell))
@@ -197,7 +179,7 @@ oneAutomata =
                         |> List.length
                    )
     in
-    toSpecification TooManyAutomata atMost1
+    fromPredicate TooManyAutomata atMost1
 
 
 type Error
