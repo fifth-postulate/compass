@@ -1,7 +1,8 @@
 module MazeTest exposing (suite)
 
 import Expect
-import Maze exposing (Error(..), Maze)
+import Maze exposing (Maze, maze)
+import Maze.Description as Description exposing (Error(..))
 import Test exposing (Test, describe, test)
 
 
@@ -29,6 +30,8 @@ problem testName description error =
             let
                 actual : Result Error Maze
                 actual =
-                    Maze.fromDescription description
+                    description
+                        |> Description.fromString
+                        |> Result.map maze
             in
             Expect.equal actual <| Err error

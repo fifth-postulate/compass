@@ -1,11 +1,11 @@
-module Maze exposing (Configuration, Error(..), Maze, Msg(..), errorToString, fromDescription, situation, update, view)
+module Maze exposing (Configuration, Maze, Msg(..), maze, situation, update, view)
 
 import Automaton.Compass exposing (Compass(..))
 import Automaton.Location as Location exposing (Location)
 import Automaton.Surrounding exposing (CellType(..), Surrounding, surrounding)
-import Dict exposing (Dict)
-import Maze.Cell as Cell exposing (Cell(..))
-import Specification exposing (Specification, fromPredicate)
+import Dict
+import Maze.Cell as Cell exposing (Cell)
+import Maze.Description exposing (Description)
 import Svg exposing (Svg)
 import Svg.Attributes as Attribute
 
@@ -24,188 +24,12 @@ type alias Divided a =
 
 
 type Maze
-    = Maze
-        { rows : Int
-        , columns : Int
-        , cells : Dict Location Cell
-        , machine : Maybe Location
-        }
+    = Maze Description
 
 
-fromDescription : String -> Result Error Maze
-fromDescription input =
-    let
-        checkedInput : Result Error (List (List Cell))
-        checkedInput =
-            Ok input
-                |> containsOnly [ '#', '.', '@', '\n' ]
-                |> Result.map String.lines
-                |> enoughRows
-                |> Result.map (List.map toColumns)
-                |> columnsAgree
-                |> enoughColumns
-                |> oneAutomata
-
-        toColumns : String -> List Cell
-        toColumns aRow =
-            aRow
-                |> String.split ""
-                |> List.map Cell.fromString
-
-        rows : List (List Cell) -> Int
-        rows raw =
-            raw
-                |> List.length
-
-        columns : List (List Cell) -> Int
-        columns raw =
-            raw
-                |> List.map List.length
-                |> List.foldl max 0
-
-        cells : List (List Cell) -> Dict Location Cell
-        cells raw =
-            raw
-                |> List.indexedMap
-                    (\y row ->
-                        List.indexedMap
-                            (\x cell ->
-                                ( ( x, y )
-                                , if Cell.isBarrier cell then
-                                    Barrier
-
-                                  else
-                                    Empty
-                                )
-                            )
-                            row
-                    )
-                |> List.concat
-                |> Dict.fromList
-
-        machine : List (List Cell) -> Maybe Location
-        machine raw =
-            raw
-                |> List.indexedMap (\y row -> List.indexedMap (\x cell -> ( x, y, cell )) row)
-                |> List.concat
-                |> locateMachine
-
-        locateMachine : List ( Int, Int, Cell ) -> Maybe Location
-        locateMachine cs =
-            case cs of
-                [] ->
-                    Nothing
-
-                ( x, y, candidate ) :: tails ->
-                    if Cell.isMachine candidate then
-                        Just ( x, y )
-
-                    else
-                        locateMachine tails
-    in
-    checkedInput
-        |> Result.map (\raw -> Maze { rows = rows raw, columns = columns raw, machine = machine raw, cells = cells raw })
-
-
-containsOnly : List Char -> Specification Error String
-containsOnly allowedCharacters =
-    let
-        predicate : String -> Bool
-        predicate input =
-            input
-                |> String.all (\character -> List.member character allowedCharacters)
-    in
-    fromPredicate UnknownCharacter predicate
-
-
-enoughRows : Specification Error (List String)
-enoughRows =
-    fromPredicate TooFewRows (\rows -> 3 <= List.length rows)
-
-
-columnsAgree : Specification Error (List (List Cell))
-columnsAgree =
-    let
-        inAgreement : List (List Cell) -> Bool
-        inAgreement result =
-            let
-                lengths : List Int
-                lengths =
-                    result
-                        |> List.map List.length
-
-                minimum : Int
-                minimum =
-                    lengths
-                        |> List.minimum
-                        |> Maybe.withDefault 0
-
-                maximum : Int
-                maximum =
-                    lengths
-                        |> List.maximum
-                        |> Maybe.withDefault 0
-            in
-            minimum == maximum
-    in
-    fromPredicate ColumnsDoNotAgree inAgreement
-
-
-enoughColumns : Specification Error (List (List Cell))
-enoughColumns =
-    let
-        atLeast3 : List (List Cell) -> Bool
-        atLeast3 result =
-            3
-                <= (result
-                        |> List.map List.length
-                        |> List.minimum
-                        |> Maybe.withDefault 0
-                   )
-    in
-    fromPredicate TooFewColumns atLeast3
-
-
-oneAutomata : Specification Error (List (List Cell))
-oneAutomata =
-    let
-        atMost1 : List (List Cell) -> Bool
-        atMost1 result =
-            1
-                >= (result
-                        |> List.concat
-                        |> List.filter Cell.isMachine
-                        |> List.length
-                   )
-    in
-    fromPredicate TooManyAutomata atMost1
-
-
-type Error
-    = UnknownCharacter
-    | TooFewRows
-    | TooFewColumns
-    | ColumnsDoNotAgree
-    | TooManyAutomata
-
-
-errorToString : Error -> String
-errorToString error =
-    case error of
-        UnknownCharacter ->
-            "unknown character"
-
-        TooFewRows ->
-            "too few rows"
-
-        TooFewColumns ->
-            "too few columns"
-
-        ColumnsDoNotAgree ->
-            "colums do not agree"
-
-        TooManyAutomata ->
-            "too many automata"
+maze : Description -> Maze
+maze =
+    Maze
 
 
 situation : Maze -> Maybe Surrounding
@@ -238,7 +62,7 @@ type Msg
 
 
 update : Msg -> Maze -> ( Maze, Cmd Msg )
-update message (Maze ({ machine } as maze)) =
+update message (Maze ({ machine } as m)) =
     case message of
         Move heading ->
             let
@@ -247,7 +71,7 @@ update message (Maze ({ machine } as maze)) =
                     machine
                         |> Maybe.map (Location.go heading)
             in
-            ( Maze { maze | machine = nextMachine }, Cmd.none )
+            ( Maze { m | machine = nextMachine }, Cmd.none )
 
 
 view : Configuration -> Maze -> Svg msg

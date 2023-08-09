@@ -11,7 +11,8 @@ import Css exposing (alignItems, center, displayFlex, flexDirection, flexStart, 
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attribute
 import Html.Styled.Events as Event
-import Maze exposing (Configuration, Error, Maze, Msg(..))
+import Maze exposing (Configuration, Maze, Msg(..))
+import Maze.Description as Description exposing (Error)
 import Time exposing (every)
 
 
@@ -44,7 +45,7 @@ type RunState
 
 
 type Error
-    = MazeError Maze.Error
+    = MazeError Description.Error
 
 
 mazeDescription : String
@@ -71,7 +72,8 @@ init _ =
         aMaze : Result Error Maze
         aMaze =
             mazeDescription
-                |> Maze.fromDescription
+                |> Description.fromString
+                |> Result.map Maze.maze
                 |> Result.mapError MazeError
 
         model : Model
@@ -280,7 +282,7 @@ broken error =
         errorMessage =
             case error of
                 MazeError e ->
-                    Maze.errorToString e
+                    Description.errorToString e
     in
     Html.div []
         [ Html.p [] [ Html.text "Something went wrong" ]
